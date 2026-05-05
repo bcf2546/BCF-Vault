@@ -8772,44 +8772,39 @@ async function pushToSheets(){
     }
 
     // ══════════════════════════════════════════════════════════════
-    // กลยุทธ์ push: ถ้า payload ใหญ่เกิน sendBeacon limit (64KB จริงๆ แต่ Chrome อาจเข้มกว่า)
-    // ให้ใช้ patch (ส่งเฉพาะ cells ที่เปลี่ยน) แทน full push
-    // Apps Script รองรับ type:'patch' อยู่แล้ว (ดู Code.gs line 157)
+    // กลยุทธ์ push v7 (Apps Script row-per-cell schema):
+    // - Apps Script รับ payload ใหญ่ได้ไม่จำกัด (data ใน row-per-cell)
+    // - Iframe POST เป็น primary (เสถียรที่สุด, รับ payload ใหญ่ได้)
+    // - sendBeacon เป็น fallback สำหรับ payload เล็ก (เร็วกว่า)
     // ══════════════════════════════════════════════════════════════
-    var BEACON_SAFE_LIMIT = 45 * 1024; // 45KB — conservative เพื่อให้ชัวร์
 
-    // ── ลอง full push ก่อน (เร็ว+ง่าย) ──
+    // Full push — ส่ง flat (ไม่ wrap ใน payload) ตาม schema ใหม่
     var payload = JSON.stringify({
       type: 'full',
-      payload: {
-        data: data,
-        hist: history.slice(0, 500),
-        tx: txList,
-        customers: customerList,
-        products: productList,
-        // invoices ถูกจัดการผ่าน pushInvoicesV2 → sheet Invoices_v2 เป็นหลัก
-        // ส่งมาด้วยเพื่อ backward compat กับ backend เดิมเท่านั้น
-        invoices: invoiceList,
-        deletedInvoices: deletedInvoices,
-        deletedCustomers: deletedCustomers,
-        deletedProducts: deletedProducts,
-        deletedCells: deletedCells
-      }
+      data: data,
+      hist: history.slice(0, 500),
+      tx: txList,
+      customers: customerList,
+      products: productList,
+      // invoices ถูกจัดการผ่าน pushInvoicesV2 → sheet Invoices_v2 เป็นหลัก
+      invoices: invoiceList,
+      deletedInvoices: deletedInvoices,
+      deletedCustomers: deletedCustomers,
+      deletedProducts: deletedProducts,
+      deletedCells: deletedCells
     });
 
-    // ── ถ้า payload ใหญ่เกิน limit ของ sendBeacon ให้เปลี่ยนเป็น patch (ส่งแค่ cells ที่เปลี่ยน) ──
-    // หมายเหตุ: บน HTTPS sendBeacon รับได้ ~64KB (เคย test ผ่าน 53KB)
-    // เลยปรับ limit เป็น 60KB ให้เผื่อ — ปกติแล้ว full push จะถึง cloud ครบทุกอย่าง
-    var BEACON_SAFE_LIMIT_HTTPS = 60 * 1024;
     var usingPatch = false;
-    if(payload.length > BEACON_SAFE_LIMIT_HTTPS && Object.keys(pendingPatch||{}).length > 0){
-      // สร้าง patch payload — ส่ง cells ที่เปลี่ยน + tx/hist ใหม่ + ALL invoices/customers/products
-      // (เพราะ tx/hist truncate จะทำให้เครื่องอื่นเห็นไม่ครบ)
+
+    // หมายเหตุ: Apps Script v7 (row-per-cell schema) รองรับ full payload ใหญ่ได้ไม่จำกัด
+    // ไม่ต้องใช้ patch mode เพื่อหลบ cell limit อีกต่อไป
+    // เก็บ patch logic ไว้สำหรับกรณี payload เกิน 100KB เท่านั้น (rare)
+    if(payload.length > 100 * 1024 && Object.keys(pendingPatch||{}).length > 0){
       var patchPayload = {
         type: 'patch',
-        data: pendingPatch, // { cellKey: cellValue or null for delete }
-        tx: txList.slice(0, 200), // ส่ง 200 ล่าสุด ครอบคลุมเดือนนี้
-        hist: history.slice(0, 100), // recent history 100 รายการ
+        data: pendingPatch,
+        tx: txList.slice(0, 200),
+        hist: history.slice(0, 100),
         customers: customerList,
         products: productList,
         deletedCells: deletedCells,
@@ -8819,7 +8814,7 @@ async function pushToSheets(){
       };
       var patchStr = JSON.stringify(patchPayload);
       if(patchStr.length < payload.length){
-        console.log('[pushToSheets] using PATCH mode (payload ' + (payload.length/1024).toFixed(1) + 'KB → ' + (patchStr.length/1024).toFixed(1) + 'KB) — '+Object.keys(pendingPatch).length+' cells');
+        console.log('[pushToSheets] using PATCH mode (>100KB) (' + (payload.length/1024).toFixed(1) + 'KB → ' + (patchStr.length/1024).toFixed(1) + 'KB)');
         payload = patchStr;
         usingPatch = true;
       }
