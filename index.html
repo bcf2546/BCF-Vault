@@ -1608,8 +1608,12 @@ button,.btn,.view-btn,.room-btn,a,
   display:none;
 }
 .bcf-more-btn{
-  width:40px;
-  height:40px;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px;
+  min-height:40px;
+  max-width:40px;
+  max-height:40px;
   background:rgba(255,255,255,0.08);
   border:1px solid rgba(201,169,97,0.25);
   color:#c9a961;
@@ -1625,6 +1629,8 @@ button,.btn,.view-btn,.room-btn,a,
   transition:all 0.18s ease;
   font-family:inherit;
   padding:0;
+  flex-shrink:0;
+  box-sizing:border-box;
 }
 .bcf-more-btn:hover{
   background:rgba(201,169,97,0.2);
@@ -1634,17 +1640,19 @@ button,.btn,.view-btn,.room-btn,a,
 }
 .bcf-more-btn:active{transform:translateY(0)}
 
-/* Dropdown menu — hidden by default */
+/* Dropdown menu — position:fixed to escape header stacking context (z-index:10)
+   This ensures the menu always floats above all content regardless of
+   where it's nested in the DOM tree. */
 .bcf-more-menu{
   display:none;
-  position:absolute;
-  top:calc(100% + 8px);
-  right:0;
+  position:fixed;
+  top:64px;
+  right:18px;
   min-width:200px;
   background:#fff;
   border:1px solid rgba(10,31,68,0.08);
   border-radius:10px;
-  box-shadow:0 16px 40px rgba(10,31,68,0.18),0 0 0 1px rgba(201,169,97,0.08);
+  box-shadow:0 16px 40px rgba(10,31,68,0.25),0 0 0 1px rgba(201,169,97,0.08);
   padding:6px;
   z-index:9999;
   animation:bcfMenuSlide 0.18s cubic-bezier(0.4,0,0.2,1);
@@ -1708,15 +1716,37 @@ button,.btn,.view-btn,.room-btn,a,
   .bcf-more-wrap{display:inline-block!important}
 }
 
-/* ── On phones (≤640px): smaller ⋯ button ── */
+/* ── On phones (≤640px): smaller ⋯ button + adjusted dropdown ── */
 @media (max-width:640px){
   .bcf-more-btn{
-    width:38px;
-    height:38px;
+    width:38px!important;
+    height:38px!important;
+    min-width:38px;min-height:38px;
+    max-width:38px;max-height:38px;
     font-size:20px;
   }
-  .bcf-more-menu{min-width:220px;right:-8px}
+  /* Dropdown: anchor near top-right of phone screen */
+  .bcf-more-menu{
+    top:62px;
+    right:10px;
+    min-width:220px;
+  }
   .bcf-more-item{padding:12px 14px;font-size:14px}
+}
+
+/* ── iPad / tablet (768-900px): properly sized for 64px header ── */
+@media (min-width:768px) and (max-width:900px){
+  .bcf-more-btn{
+    width:38px!important;
+    height:38px!important;
+    min-width:38px;min-height:38px;
+    max-width:38px;max-height:38px;
+    font-size:20px;
+  }
+  .bcf-more-menu{
+    top:70px;
+    right:18px;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2296,21 +2326,34 @@ function setRoom(r){
 function setView(v){
   activeView=v;
   document.querySelectorAll('.view-btn').forEach((b,i)=>b.classList.toggle('active',['dashboard','map','summary','search','history','transfer','txlog','move','flashcard','stockreport','customers','products','invoice','invoicehist','salesreport'][i]===v));
-  renderView();
-  // Premium UX — re-trigger fade-in animation on the main content area
-  // Skip animation for heavy views (large tables) — animation on hundreds of rows can hang iPad Safari
-  var heavyViews = ['summary','search','history','txlog','flashcard','stockreport','salesreport','invoicehist'];
-  if(heavyViews.indexOf(v) === -1){
-    try{
-      var mainCol = document.querySelector('.main > div:not(.sidebar)') || document.querySelector('.main');
-      if(mainCol){
-        mainCol.classList.remove('view');
-        // Force reflow then re-add to restart animation
-        void mainCol.offsetWidth;
-        mainCol.classList.add('view');
-      }
-    }catch(e){}
+
+  // Clear current content immediately to release memory & event handlers
+  // before next view renders. Big help on iPad Safari.
+  var mainContent = document.getElementById('mainContent');
+  if(mainContent){
+    mainContent.innerHTML = '<div style="text-align:center;padding:40px;color:#94a0b5;font-size:13px">กำลังโหลด...</div>';
   }
+
+  // Defer heavy render to next animation frame so the DOM clear paints first.
+  // Without this, iPad Safari shows stale content until render finishes.
+  requestAnimationFrame(function(){
+    renderView();
+    // Premium UX — re-trigger fade-in animation on the main content area
+    // Skip animation for heavy views OR on mobile/iPad (≤1279px) — large tables freeze Safari
+    var heavyViews = ['summary','search','history','txlog','flashcard','stockreport','salesreport','invoicehist'];
+    var isMobileOrTablet = window.innerWidth <= 1279;
+    if(heavyViews.indexOf(v) === -1 && !isMobileOrTablet){
+      try{
+        var mainCol = document.querySelector('.main > div:not(.sidebar)') || document.querySelector('.main');
+        if(mainCol){
+          mainCol.classList.remove('view');
+          // Force reflow then re-add to restart animation
+          void mainCol.offsetWidth;
+          mainCol.classList.add('view');
+        }
+      }catch(e){}
+    }
+  });
 }
 function renderView(){
   if(activeView==='dashboard')renderDashboard();
@@ -6173,9 +6216,15 @@ function setupAutocomplete(inputId, wrapId){
     });
     wrap.appendChild(ul);
   });
-  document.addEventListener('click', function(e){
+  // Remove previous outside-click handler if this autocomplete was set up before
+  // (prevents listener leak when re-rendering the same view repeatedly).
+  if(wrap._bcfOutsideClickHandler){
+    document.removeEventListener('click', wrap._bcfOutsideClickHandler);
+  }
+  wrap._bcfOutsideClickHandler = function(e){
     if(!wrap.contains(e.target)){ var l=wrap.querySelector('.autocomplete-list'); if(l) l.remove(); }
-  });
+  };
+  document.addEventListener('click', wrap._bcfOutsideClickHandler);
 }
 
 function applyMapFilter(){
@@ -8837,7 +8886,8 @@ function doLogout(){
 
 // ตรวจว่าอยู่ใน mobile mode ไหม (ต้องตรงกับ CSS @media)
 function isMobileMode(){
-  return window.innerWidth <= 767 || window.innerHeight <= 500;
+  // ≤900px covers phones + iPad portrait (where sidebar/More menu adapt)
+  return window.innerWidth <= 900 || window.innerHeight <= 500;
 }
 
 function toggleMobileSidebar(){
