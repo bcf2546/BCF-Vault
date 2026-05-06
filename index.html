@@ -918,6 +918,7 @@ body.dark .cell-count{background:#2563eb}
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:16px;font-weight:700;color:#185FA5">❄️ ผังห้องเย็น BCF</div><span title="อัปเดตล่าสุด 21/04/2026" style="font-size:10px;font-weight:600;color:#185FA5;background:#E6F1FB;padding:2px 8px;border-radius:10px;border:1px solid #B5D4F4">v18.1</span></div>
         <div style="font-size:11px;color:#8a94a6;font-weight:400;margin-top:1px">บริษัท ฟาร์มไก่ดำ (กาญจนบุรี) จำกัด</div>
         <div style="font-size:10px;color:#adb5bd;margin-top:1px">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
+        <div id="bcfVersionLabel" style="font-size:9px;color:#c9a961;margin-top:1px;font-family:monospace" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">v18.17 · build 20260507-0056</div>
       </div>
     </div>
   </div>
@@ -995,6 +996,12 @@ body.dark .cell-count{background:#2563eb}
 
 
 <script>
+
+// ── Version (auto-update) ──
+const BCF_VERSION = "18.17";
+const BCF_BUILD = "20260507-0056";
+window.BCF_VERSION = BCF_VERSION;
+window.BCF_BUILD = BCF_BUILD;
 
 const ROOMS={
   room1:{name:'ห้องเย็นเบอร์ 1',cols:['AA','AB','A','B','C','D','E','F','G','H'],rows:[1,2,3,4,5,6,7,8,9,10,11],walkway:['AA','AB'],exclude:['E9','E10','E11','F9','F10','F11','G9','G10','G11','H9','H10','H11'],note:'ผังห้องเย็นเบอร์ 1'},
@@ -9509,6 +9516,87 @@ window.addEventListener('appinstalled', () => {
   if (isIOS && !isStandalone) {
     const btn = document.getElementById('installBtn');
     if (btn) btn.style.display = '';
+  }
+})();
+
+// ── Auto-update (version check) ──
+const UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 นาที
+let _updateAvailable = false;
+
+async function checkForUpdate() {
+  if (_updateAvailable) return; // already showing banner
+  try {
+    // Cache-busting timestamp
+    const url = 'version.json?t=' + Date.now();
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return;
+    const remote = await res.json();
+    if (!remote || !remote.version) return;
+    // Compare version + build (build covers same-version reissues)
+    const currentKey = BCF_VERSION + '|' + BCF_BUILD;
+    const remoteKey = (remote.version || '') + '|' + (remote.build || '');
+    if (remoteKey !== currentKey) {
+      _updateAvailable = true;
+      showUpdateBanner(remote);
+    }
+  } catch (err) {
+    // Network error — silently retry next interval
+    console.log('checkForUpdate:', err.message);
+  }
+}
+
+function showUpdateBanner(remote) {
+  // Avoid duplicate
+  if (document.getElementById('bcfUpdateBanner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'bcfUpdateBanner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:linear-gradient(90deg,#0a1f44,#1a3a7a);color:#c9a961;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:14px;font-family:Sarabun,sans-serif;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.25);border-bottom:2px solid #c9a961';
+  const verText = remote && remote.version ? (' v' + remote.version) : '';
+  banner.innerHTML =
+    '<span style="font-weight:600">🎉 มีเวอร์ชันใหม่' + verText + ' — กดเพื่ออัพเดต</span>' +
+    '<button id="bcfUpdateBtn" style="background:#c9a961;color:#0a1f44;border:none;padding:6px 16px;border-radius:6px;font-weight:700;cursor:pointer;font-family:inherit">รีโหลดเลย</button>' +
+    '<button id="bcfUpdateLater" style="background:transparent;color:#c9a961;border:1px solid #c9a961;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px">ภายหลัง</button>';
+  document.body.appendChild(banner);
+  document.getElementById('bcfUpdateBtn').onclick = () => {
+    // Force reload with cache bypass
+    location.reload();
+  };
+  document.getElementById('bcfUpdateLater').onclick = () => {
+    banner.style.display = 'none';
+    // Allow re-show on next interval
+    _updateAvailable = false;
+  };
+}
+
+// Check on load (after a short delay to not interfere with initial render)
+setTimeout(checkForUpdate, 8000);
+// Periodic check
+setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL_MS);
+// Re-check when tab becomes visible again (user came back)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    setTimeout(checkForUpdate, 1000);
+  }
+});
+
+// Wire up version label (dynamic from constant + click to force check)
+(function(){
+  const lbl = document.getElementById('bcfVersionLabel');
+  if (lbl) {
+    lbl.textContent = 'v' + BCF_VERSION + ' · build ' + BCF_BUILD;
+    lbl.style.cursor = 'pointer';
+    lbl.onclick = async () => {
+      const orig = lbl.textContent;
+      lbl.textContent = 'กำลังเช็ค...';
+      _updateAvailable = false; // allow re-trigger
+      await checkForUpdate();
+      if (!_updateAvailable) {
+        lbl.textContent = '✓ เวอร์ชันล่าสุดแล้ว';
+        setTimeout(() => { lbl.textContent = orig; }, 2500);
+      } else {
+        lbl.textContent = orig;
+      }
+    };
   }
 })();
 
