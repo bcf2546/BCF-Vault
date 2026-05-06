@@ -1719,6 +1719,34 @@ button,.btn,.view-btn,.room-btn,a,
   .bcf-more-item{padding:12px 14px;font-size:14px}
 }
 
+/* ════════════════════════════════════════════════════════════════
+   PERFORMANCE — large tables on iPad/iPhone
+   Use CSS containment + GPU layer hints to prevent freeze on
+   summary, search, history pages with hundreds of rows
+   ════════════════════════════════════════════════════════════════ */
+.data-table{
+  /* Tell browser this element is independent — paint optimizations */
+  contain:content;
+}
+.data-table tbody{
+  contain:layout style;
+}
+.data-table tr{
+  /* Enable GPU compositing for row hover */
+  contain:layout style paint;
+}
+/* Avoid expensive box-shadow recalc on hover for many rows */
+.data-table tbody tr{
+  transition:background-color 0.1s ease;
+}
+
+/* Disable animations during heavy renders (mobile only — desktop is fast enough) */
+@media (max-width:1279px){
+  .data-table tbody tr{transition:none}
+  /* Skip view fade-in animation on tables (already handled in JS but extra safety) */
+  .view{animation-duration:0.15s}
+}
+
 </style>
 </head>
 <body>
@@ -2238,6 +2266,28 @@ function cellExpStatus(items){
   return worst;
 }
 
+// ── Debounce utility — for input filters that trigger heavy renders ──
+function bcfDebounce(fn, wait){
+  var timer = null;
+  return function(){
+    var args = arguments, ctx = this;
+    if(timer) clearTimeout(timer);
+    timer = setTimeout(function(){ fn.apply(ctx, args); }, wait);
+  };
+}
+// Debounced versions of heavy filter functions (defined later) — created on demand
+window._bcfDebouncedFilters = {};
+function bcfDebouncedCall(fnName, wait){
+  if(!window._bcfDebouncedFilters[fnName]){
+    window._bcfDebouncedFilters[fnName] = bcfDebounce(function(){
+      // Look up function on window (top-level functions are auto on window in browsers)
+      var fn = window[fnName];
+      if(typeof fn === 'function') fn();
+    }, wait);
+  }
+  window._bcfDebouncedFilters[fnName]();
+}
+
 function setRoom(r){
   activeRoom=r;
   document.querySelectorAll('.room-btn').forEach((b,i)=>b.classList.toggle('active',['room1','room2f1','room2f2','room5'][i]===r));
@@ -2248,15 +2298,19 @@ function setView(v){
   document.querySelectorAll('.view-btn').forEach((b,i)=>b.classList.toggle('active',['dashboard','map','summary','search','history','transfer','txlog','move','flashcard','stockreport','customers','products','invoice','invoicehist','salesreport'][i]===v));
   renderView();
   // Premium UX — re-trigger fade-in animation on the main content area
-  try{
-    var mainCol = document.querySelector('.main > div:not(.sidebar)') || document.querySelector('.main');
-    if(mainCol){
-      mainCol.classList.remove('view');
-      // Force reflow then re-add to restart animation
-      void mainCol.offsetWidth;
-      mainCol.classList.add('view');
-    }
-  }catch(e){}
+  // Skip animation for heavy views (large tables) — animation on hundreds of rows can hang iPad Safari
+  var heavyViews = ['summary','search','history','txlog','flashcard','stockreport','salesreport','invoicehist'];
+  if(heavyViews.indexOf(v) === -1){
+    try{
+      var mainCol = document.querySelector('.main > div:not(.sidebar)') || document.querySelector('.main');
+      if(mainCol){
+        mainCol.classList.remove('view');
+        // Force reflow then re-add to restart animation
+        void mainCol.offsetWidth;
+        mainCol.classList.add('view');
+      }
+    }catch(e){}
+  }
 }
 function renderView(){
   if(activeView==='dashboard')renderDashboard();
@@ -3034,7 +3088,7 @@ function renderSummary(){
       <option value="nolot">ไม่มีข้อมูล LOT</option>
       <option value="walkway">วางในทางเดิน</option>
     </select>
-    <input type="text" class="filter-input" id="lotSearch" placeholder="ค้นหา LOT..." oninput="applyFilter()" style="width:160px">
+    <input type="text" class="filter-input" id="lotSearch" placeholder="ค้นหา LOT..." oninput="bcfDebouncedCall('applyFilter',250)" style="width:160px">
   </div>
   <div id="summaryTable"></div>`;
 
@@ -3131,7 +3185,7 @@ function renderSearch(){
 
       <div>
         <div style="font-size:11px;font-weight:600;color:#667085;margin-bottom:5px">LOT (วันผลิต)</div>
-        <input type="text" id="fLot" class="filter-input" placeholder="เช่น 22/08/25" style="width:100%" oninput="applySearchFilter()">
+        <input type="text" id="fLot" class="filter-input" placeholder="เช่น 22/08/25" style="width:100%" oninput="bcfDebouncedCall('applySearchFilter',250)">
       </div>
 
       <div>
@@ -5057,7 +5111,7 @@ function renderFlashCard(){
       <option value="">🏠 ทุกห้องเย็น</option>
       ${Object.entries(ROOMS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('')}
     </select>
-    <input type="text" id="fcSearch" placeholder="🔍 ค้นหาชื่อสินค้า..." class="filter-input" oninput="refreshFlashCards()">
+    <input type="text" id="fcSearch" placeholder="🔍 ค้นหาชื่อสินค้า..." class="filter-input" oninput="bcfDebouncedCall('refreshFlashCards',250)">
     <div id="fcSummaryMini" style="font-size:12px;color:#6b778c;font-weight:500;white-space:nowrap;padding:0 10px"></div>
   </div>
 
