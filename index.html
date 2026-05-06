@@ -2,9 +2,15 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
+<!-- iOS PWA meta — enables fullscreen "Add to Home Screen" -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BCF">
+<meta name="format-detection" content="telephone=no">
 <title>ผังห้องเย็น BCF</title>
 <!-- BCF Favicon (Black Chicken Farm) -->
 <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAAAIABqAQAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAATFJREFUeJztkrFLAmEYxn+ffOZZoVB2iwguRYNbSEsNQjU0RlNQ5BCBw221NdQQIU0O1xhEgfcXBC3SEghBQxQtQhERHWiYWJ6eXsOBRFKDLg098/s8L8/vfUXeSDr0IAmQ2HzsypxLR/D0sh34AwES3C5Ww+HmwWLrqMh7rcV0zM/qbJBwSFKqNNkzSnilYH9tpDNA000iqmRjcYioKmk5sL0cwjivcHzwRizah98nsJuuSdNNru8tcumIG5BJqQA8FW0Kzw2WEgEADs/K1G2H/F0NgIlRha/zbQaabrKeeSE8LJmPDyDE77013WyfvgOizyu4uP0AIDkXpF/xEB9TmBxXfoaYSanUbYergsXpZZVytcXOSZGVmQALU4O8VprsZl2I3yXyRtL5/0S3S7f6BBs5ZPFlbCBwAAAAAElFTkSuQmCC">
@@ -588,14 +594,9 @@ body{
   color:#fff!important;
 }
 
-/* Mobile responsive — compact */
+/* Mobile responsive — basic header tweaks (full mobile CSS at end of stylesheet) */
 @media (max-width:767px),(max-height:500px){
-  .header{height:auto!important;padding:10px 14px!important;flex-wrap:wrap}
   .header .mobile-menu-btn{display:inline-flex!important}
-  .bcf-logo-frame{width:42px;height:42px}
-  .bcf-brand-title{font-size:18px}
-  .bcf-brand-subtitle{font-size:10px}
-  .bcf-brand-address{display:none}
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1175,16 +1176,514 @@ button:focus-visible,
 .bcf-stat-pct[data-level="high"]{color:#d97706}
 .bcf-stat-pct[data-level="crit"]{color:#c0392b}
 
-/* Mobile */
-@media (max-width:600px){
-  .bcf-room-title{font-size:20px}
-  .bcf-map-row1{gap:8px}
-  .bcf-inline-stats{margin-left:0;flex-basis:100%;justify-content:flex-start;gap:6px}
-  .bcf-stat-bar{width:80px}
-  .bcf-inline-select{font-size:12px!important;padding:3px 20px 3px 6px!important}
-  .bcf-legend-item{font-size:10px}
-  .bcf-legend-divider{display:none}
+/* ════════════════════════════════════════════════════════════════
+   📱 IPHONE / MOBILE — comprehensive responsive optimization
+   Applies on screens ≤ 600px wide (covers iPhone SE → 14 Pro Max)
+   ════════════════════════════════════════════════════════════════ */
+
+/* iOS — prevent zoom on input focus */
+@supports (-webkit-touch-callout:none){
+  input,select,textarea{font-size:16px!important}
 }
+
+@media (max-width:600px){
+
+  /* ── Header — slim down ── */
+  .header{
+    height:56px!important;
+    padding:0 12px!important;
+    gap:8px!important;
+  }
+  .bcf-logo-frame{
+    width:36px!important;height:36px!important;
+    padding:2px!important;
+  }
+  .bcf-brand-title{
+    font-size:15px!important;
+    line-height:1.15!important;
+  }
+  .bcf-brand-title .ico{font-size:13px!important;margin-right:3px!important}
+  .bcf-brand-subtitle,
+  .bcf-brand-address{display:none!important}
+  /* Edition pill — tiny but visible */
+  .bcf-version-pill{
+    font-size:8px!important;
+    padding:1px 5px!important;
+    margin-left:5px!important;
+  }
+  /* Mobile menu button — visible & sized for fingers */
+  .header .mobile-menu-btn{
+    display:inline-flex!important;
+    width:40px;height:40px;
+    font-size:20px;
+  }
+
+  /* Header actions — More menu (⋯) replaces icon-only conversion */
+  .header-actions{gap:4px!important}
+
+  /* ── Sync bar — compact ── */
+  .sync-bar{
+    padding:6px 12px!important;
+    font-size:11px!important;
+    gap:6px!important;
+    flex-wrap:wrap;
+  }
+  .sync-bar > #syncStatus{
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .sync-bar .sync-btn{
+    font-size:11px!important;
+    padding:4px 8px!important;
+  }
+  .sync-bar #syncTime{
+    flex-basis:100%;
+    font-size:10px!important;
+    margin-left:0!important;
+  }
+
+  /* ── Sidebar (overlay style) ── */
+  .sidebar{
+    background:#fff!important;
+    box-shadow:4px 0 24px rgba(10,31,68,0.2)!important;
+    width:240px!important;
+  }
+  .view-btn,.room-btn{
+    margin:2px 8px!important;
+    padding:11px 14px!important;
+    font-size:14px!important;
+    min-height:44px;
+  }
+  .sidebar-section{
+    font-size:9px!important;
+    padding:14px 14px 4px!important;
+  }
+
+  /* ── Main content — tighter padding ── */
+  .content{padding:12px!important}
+
+  /* ── Map header rows — restack ── */
+  .bcf-map-header{margin-bottom:6px}
+  .bcf-room-title{font-size:18px!important;gap:4px!important}
+  .bcf-pin{font-size:14px!important}
+  .bcf-map-row1{
+    gap:6px!important;
+    align-items:center!important;
+  }
+  .bcf-inline-stats{
+    margin-left:auto!important;
+    gap:5px!important;
+    font-size:11px!important;
+  }
+  .bcf-stat-num{font-size:15px!important}
+  .bcf-stat-bar{width:50px!important;height:4px!important}
+  .bcf-stat-pct{font-size:11px!important;min-width:30px!important}
+
+  /* Filter selects */
+  .bcf-map-row2{gap:4px!important}
+  .bcf-inline-select{
+    font-size:12px!important;
+    padding:4px 18px 4px 6px!important;
+    max-width:100px!important;
+  }
+  /* Hide vertical divider on mobile (no room) */
+  .bcf-legend-divider{display:none!important}
+  /* Legend chips — smaller, wrap to next line */
+  .bcf-legend-item{
+    font-size:10px!important;
+    gap:3px!important;
+  }
+  .bcf-legend-box{width:9px!important;height:9px!important}
+
+  /* ── Buttons — touch-friendly minimum ── */
+  button,.btn{min-height:38px}
+  .btn-sm{min-height:32px}
+
+  /* ── Modals — full-screen-ish on mobile ── */
+  .modal{
+    width:96vw!important;
+    max-width:96vw!important;
+    max-height:92vh!important;
+    border-radius:10px!important;
+  }
+  .modal-header{padding:12px 14px!important}
+  .modal-header h3{font-size:15px!important}
+  .modal-body{padding:14px!important}
+  .modal-footer{
+    padding:10px 14px!important;
+    flex-wrap:wrap;
+  }
+  .modal-footer .btn{
+    flex:1;
+    min-width:120px;
+  }
+
+  /* ── Tables in modals — horizontal scroll ── */
+  .modal-body{overflow-x:auto}
+  .modal-body table{min-width:100%}
+
+  /* ── Map grid — allow horizontal scroll ── */
+  .grid-wrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin:0 -12px;
+    padding:0 12px;
+  }
+
+  /* ── Highlight banner ── */
+  .highlight-banner{
+    font-size:12px!important;
+    padding:8px 10px!important;
+    flex-wrap:wrap;
+  }
+
+  /* ── Form rows ── */
+  .form-row{flex-direction:column!important}
+
+  /* Tap highlight (subtle gold) */
+  *{-webkit-tap-highlight-color:rgba(201,169,97,0.2)}
+}
+
+/* ── Very small phones (iPhone SE 1st gen ~ 320px) ── */
+@media (max-width:360px){
+  .bcf-brand-title{font-size:13px!important}
+  .bcf-version-pill{display:none!important}
+  .header-actions .btn:nth-child(n+4){display:none!important}
+  .bcf-room-title{font-size:16px!important}
+  .bcf-stat-bar{width:40px!important}
+  .bcf-inline-select{max-width:80px!important;font-size:11px!important}
+  .bcf-legend-item{font-size:9px!important}
+}
+
+/* ════════════════════════════════════════════════════════════════
+   iPAD POLISH — tablet-specific tweaks (768-1279px)
+   Covers: iPad Mini, iPad Air, iPad Pro 11", iPad Pro 12.9"
+   Both portrait and landscape orientations
+   ════════════════════════════════════════════════════════════════ */
+@media (min-width:768px) and (max-width:1279px){
+
+  /* === HEADER — moderate compact === */
+  .header{
+    height:64px!important;
+    padding:0 18px!important;
+  }
+  .bcf-logo-frame{
+    width:46px!important;height:46px!important;
+  }
+  .bcf-brand-title{
+    font-size:20px!important;
+    line-height:1.15!important;
+  }
+  .bcf-brand-title .ico{font-size:15px!important}
+  .bcf-brand-subtitle{
+    font-size:10px!important;
+    margin-top:1px!important;
+  }
+  .bcf-brand-address{display:none!important} /* save space */
+  .bcf-version-pill{
+    font-size:9px!important;
+    padding:1px 7px!important;
+  }
+
+  /* === HEADER ACTIONS — show all buttons but compact === */
+  .header-actions{gap:6px!important}
+  .header-actions .btn{
+    font-size:12px!important;
+    padding:7px 11px!important;
+    min-height:38px;
+  }
+  .header-actions .btn-sm{
+    padding:6px 9px!important;
+    font-size:11px!important;
+  }
+
+  /* === SIDEBAR — slightly slimmer === */
+  .sidebar{
+    width:190px!important;
+  }
+  .view-btn,.room-btn{
+    padding:9px 13px!important;
+    font-size:13px!important;
+    min-height:40px;
+  }
+  .sidebar-section{
+    font-size:9.5px!important;
+    padding:14px 14px 4px!important;
+  }
+
+  /* === SYNC BAR === */
+  .sync-bar{
+    padding:8px 18px!important;
+    font-size:12px!important;
+  }
+
+  /* === MAIN CONTENT === */
+  .content{padding:16px 20px!important}
+
+  /* === MAP HEADER (3-row inline) === */
+  .bcf-room-title{font-size:21px!important}
+  .bcf-pin{font-size:16px!important}
+  .bcf-inline-stats{
+    gap:6px!important;
+    font-size:12px!important;
+  }
+  .bcf-stat-num{font-size:17px!important}
+  .bcf-stat-bar{width:90px!important}
+
+  /* === FILTER ROW — show in 1 line if possible === */
+  .bcf-map-row2{gap:6px!important}
+  .bcf-inline-select{
+    font-size:12.5px!important;
+    max-width:140px!important;
+  }
+  .bcf-legend-item{font-size:11px!important}
+
+  /* === FLASH CARD — 2 columns on iPad portrait, 3 on landscape === */
+  .fc-grid{
+    column-width:300px!important;
+  }
+
+  /* === BUTTONS — touch-friendly but not too big === */
+  .btn,button.btn{
+    min-height:38px!important;
+    font-size:13px!important;
+  }
+  .btn-sm{min-height:32px!important;font-size:12px!important}
+
+  /* === MODALS — better tablet sizing === */
+  .modal{
+    max-width:88vw!important;
+    max-height:90vh!important;
+  }
+
+  /* === DASHBOARD STAT CARDS — 4 columns on iPad === */
+  .stat-row{
+    grid-template-columns:repeat(4,1fr)!important;
+    gap:10px!important;
+  }
+  .stat-card{padding:14px!important}
+  .stat-val{font-size:22px!important}
+}
+
+/* ── iPad PORTRAIT specific (narrower viewport, 768-900px) ── */
+@media (min-width:768px) and (max-width:900px){
+  /* Hide some non-critical buttons in portrait to save header space */
+  .header-actions [onclick*="importCSV"]{display:none!important}
+  /* Stack flash card 2 cols max in portrait */
+  .fc-grid{column-width:280px!important}
+  /* Slightly smaller stat numbers */
+  .stat-val{font-size:20px!important}
+  /* Dashboard stat cards: 2 cols on narrow iPad portrait */
+  .stat-row{grid-template-columns:repeat(2,1fr)!important}
+}
+
+/* ── iPad LANDSCAPE — more space, can show more === */
+@media (min-width:1024px) and (max-width:1279px) and (orientation:landscape){
+  .sidebar{width:200px!important}
+  .header{height:68px!important}
+  .bcf-brand-title{font-size:21px!important}
+  .bcf-brand-address{display:block!important;font-size:9.5px!important}
+  /* Restore CSV/Import buttons in landscape */
+  .header-actions [onclick*="importCSV"]{display:inline-flex!important}
+}
+
+/* ── iPad Pro 12.9" portrait specifically (1024px wide) ── */
+@media (min-width:1000px) and (max-width:1080px) and (orientation:portrait){
+  .header{height:70px!important;padding:0 24px!important}
+  .bcf-brand-title{font-size:22px!important}
+  .bcf-brand-address{display:block!important}
+  .sidebar{width:210px!important}
+}
+
+/* ════════════════════════════════════════════════════════════════
+   iOS-SPECIFIC POLISH — prevent auto-zoom, smooth scroll, safe area
+   ════════════════════════════════════════════════════════════════ */
+
+/* Prevent iOS auto-zoom when focusing inputs (iPhone + iPad both zoom on <16px) */
+@media (max-width:1279px){
+  input[type="text"],input[type="number"],input[type="email"],
+  input[type="password"],input[type="date"],input[type="search"],
+  input[type="tel"],input[type="url"],select,textarea{
+    font-size:16px!important;
+  }
+}
+/* Phone-only — keep filter inputs slightly smaller (auto-zoom still prevented) */
+@media (max-width:767px){
+  .filter-input,.filter-select{
+    font-size:16px!important;
+  }
+}
+
+/* iOS-style smooth scroll & font rendering */
+html{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+body{
+  -webkit-overflow-scrolling:touch;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* iPhone notch / home indicator safe area (PWA standalone mode) */
+@supports (padding:env(safe-area-inset-top)){
+  @media (max-width:767px){
+    body{
+      padding-top:env(safe-area-inset-top);
+      padding-bottom:env(safe-area-inset-bottom);
+      padding-left:env(safe-area-inset-left);
+      padding-right:env(safe-area-inset-right);
+    }
+  }
+}
+
+/* Disable text selection on UI chrome (header, sidebar, buttons) — feels more app-like */
+.header,.sidebar,.sync-bar,.btn,.view-btn,.room-btn,
+.bcf-inline-select,.bcf-stat-num,.bcf-stat-pct,
+.bcf-legend-item,.bcf-version-pill{
+  -webkit-user-select:none;
+  user-select:none;
+}
+/* But allow selection in content/data */
+.content,.modal-body,input,textarea,td,th{
+  -webkit-user-select:text;
+  user-select:text;
+}
+
+/* Flash card — single column on phone for readable cards */
+@media (max-width:640px){
+  .fc-grid{
+    column-count:1!important;
+    column-width:auto!important;
+    column-gap:0!important;
+  }
+  .fc-card{margin-bottom:10px!important}
+}
+
+/* ════════════════════════════════════════════════════════════════
+   HEADER MORE MENU (⋯) — collapsible actions for narrow screens
+   ════════════════════════════════════════════════════════════════ */
+
+/* Wrapper + button — hidden by default (desktop) */
+.bcf-more-wrap{
+  position:relative;
+  display:none;
+}
+.bcf-more-btn{
+  width:40px;
+  height:40px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(201,169,97,0.25);
+  color:#c9a961;
+  border-radius:8px;
+  font-size:22px;
+  font-weight:700;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  letter-spacing:0.05em;
+  transition:all 0.18s ease;
+  font-family:inherit;
+  padding:0;
+}
+.bcf-more-btn:hover{
+  background:rgba(201,169,97,0.2);
+  color:#fff;
+  border-color:#c9a961;
+  transform:translateY(-1px);
+}
+.bcf-more-btn:active{transform:translateY(0)}
+
+/* Dropdown menu — hidden by default */
+.bcf-more-menu{
+  display:none;
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  min-width:200px;
+  background:#fff;
+  border:1px solid rgba(10,31,68,0.08);
+  border-radius:10px;
+  box-shadow:0 16px 40px rgba(10,31,68,0.18),0 0 0 1px rgba(201,169,97,0.08);
+  padding:6px;
+  z-index:1500;
+  animation:bcfMenuSlide 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+.bcf-more-menu.open{display:block}
+@keyframes bcfMenuSlide{
+  from{opacity:0;transform:translateY(-6px) scale(0.97)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.bcf-more-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:10px 14px;
+  background:transparent;
+  border:none;
+  border-radius:7px;
+  font-family:'Sarabun',sans-serif;
+  font-size:13.5px;
+  font-weight:500;
+  color:#1a2540;
+  text-align:left;
+  cursor:pointer;
+  transition:background 0.12s ease, color 0.12s ease;
+}
+.bcf-more-item:hover{
+  background:rgba(201,169,97,0.1);
+  color:#0a1f44;
+}
+.bcf-more-item:active{background:rgba(201,169,97,0.18)}
+
+.bcf-more-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  height:22px;
+  font-size:14px;
+  flex-shrink:0;
+  color:#a8893f;
+}
+
+.bcf-more-item-danger{color:#c0392b}
+.bcf-more-item-danger .bcf-more-icon{color:#c0392b}
+.bcf-more-item-danger:hover{
+  background:rgba(192,57,43,0.08);
+  color:#c0392b;
+}
+
+.bcf-more-divider{
+  height:1px;
+  background:rgba(10,31,68,0.06);
+  margin:5px 8px;
+}
+
+/* ── Mobile + iPad portrait (≤900px): show ⋯, hide collapsible buttons ── */
+@media (max-width:900px){
+  .header-action-collapsible{display:none!important}
+  .bcf-more-wrap{display:inline-block!important}
+}
+
+/* ── On phones (≤640px): smaller ⋯ button ── */
+@media (max-width:640px){
+  .bcf-more-btn{
+    width:38px;
+    height:38px;
+    font-size:20px;
+  }
+  .bcf-more-menu{min-width:220px;right:-8px}
+  .bcf-more-item{padding:12px 14px;font-size:14px}
+}
+
 </style>
 </head>
 <body>
@@ -1205,12 +1704,26 @@ button:focus-visible,
   </div>
   <div class="header-actions">
     <button class="btn btn-sm" id="installBtn" onclick="installPWA()" style="display:none;font-size:12px;background:#0a1f44;color:#c9a961;border:1px solid #c9a961" title="ติดตั้งเป็นแอปบนเครื่อง">📲 ติดตั้งแอป</button>
-    <button class="btn btn-sm" id="lockBtn" onclick="toggleLock()" style="font-size:12px;color:#c0392b">🔒 โหมดดูอย่างเดียว</button>
-    <button class="btn" onclick="showSnapshots()" style="background:#7c3aed;color:#fff" title="สำรอง/กู้คืนข้อมูล">💾 Backup</button>
-    <button class="btn btn-success" onclick="exportCSV()">↓ CSV</button>
-    <button class="btn" onclick="importCSV()" style="font-size:12px">↑ Import CSV</button>
-    <button class="btn btn-warn" onclick="exportPDF()">📄 PDF Report</button>
-    <button class="btn btn-primary" onclick="printMap()">⎙ พิมพ์ผัง</button>
+    <button class="btn btn-sm header-action-collapsible" id="lockBtn" onclick="toggleLock()" style="font-size:12px;color:#c0392b">🔒 โหมดดูอย่างเดียว</button>
+    <button class="btn header-action-collapsible" onclick="showSnapshots()" style="background:#7c3aed;color:#fff" title="สำรอง/กู้คืนข้อมูล">💾 Backup</button>
+    <button class="btn btn-success header-action-collapsible" onclick="exportCSV()">↓ CSV</button>
+    <button class="btn header-action-collapsible" onclick="importCSV()" style="font-size:12px">↑ Import CSV</button>
+    <button class="btn btn-warn header-action-collapsible" onclick="exportPDF()">📄 PDF Report</button>
+    <button class="btn btn-primary header-action-collapsible" onclick="printMap()">⎙ พิมพ์ผัง</button>
+
+    <!-- More menu (visible only on narrow screens) -->
+    <div class="bcf-more-wrap">
+      <button class="bcf-more-btn" onclick="toggleHeaderMenu(event)" aria-label="เมนูเพิ่มเติม" title="เครื่องมือเพิ่มเติม">⋯</button>
+      <div class="bcf-more-menu" id="bcfMoreMenu" role="menu">
+        <button class="bcf-more-item" onclick="closeHeaderMenu();showSnapshots()"><span class="bcf-more-icon">💾</span>Backup</button>
+        <button class="bcf-more-item" onclick="closeHeaderMenu();exportCSV()"><span class="bcf-more-icon">↓</span>Export CSV</button>
+        <button class="bcf-more-item" onclick="closeHeaderMenu();importCSV()"><span class="bcf-more-icon">↑</span>Import CSV</button>
+        <button class="bcf-more-item" onclick="closeHeaderMenu();exportPDF()"><span class="bcf-more-icon">📄</span>PDF Report</button>
+        <button class="bcf-more-item" onclick="closeHeaderMenu();printMap()"><span class="bcf-more-icon">⎙</span>พิมพ์ผัง</button>
+        <div class="bcf-more-divider"></div>
+        <button class="bcf-more-item bcf-more-item-danger" onclick="closeHeaderMenu();toggleLock()"><span class="bcf-more-icon">🔒</span>โหมดดูอย่างเดียว</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -8255,6 +8768,29 @@ function closeMobileSidebar(){
   if(sidebar) sidebar.classList.remove('mobile-open');
   if(backdrop) backdrop.classList.remove('active');
 }
+
+// ── Header More menu (⋯) ──
+function toggleHeaderMenu(e){
+  if(e) e.stopPropagation();
+  var menu = document.getElementById('bcfMoreMenu');
+  if(!menu) return;
+  menu.classList.toggle('open');
+}
+function closeHeaderMenu(){
+  var menu = document.getElementById('bcfMoreMenu');
+  if(menu) menu.classList.remove('open');
+}
+// Close menu on outside click or Escape
+document.addEventListener('click', function(e){
+  var menu = document.getElementById('bcfMoreMenu');
+  if(!menu || !menu.classList.contains('open')) return;
+  // Don't close if click was inside menu or on the toggle button
+  if(e.target.closest('.bcf-more-wrap')) return;
+  menu.classList.remove('open');
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeHeaderMenu();
+});
 
 // ปิด sidebar อัตโนมัติเมื่อเลือกเมนูบนมือถือ
 document.addEventListener('click', function(e){
