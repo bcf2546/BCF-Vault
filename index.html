@@ -922,6 +922,7 @@ body.dark .cell-count{background:#2563eb}
     </div>
   </div>
   <div class="header-actions">
+    <button class="btn btn-sm" id="installBtn" onclick="installPWA()" style="display:none;font-size:12px;background:#0a1f44;color:#c9a961;border:1px solid #c9a961" title="ติดตั้งเป็นแอปบนเครื่อง">📲 ติดตั้งแอป</button>
     <button class="btn btn-sm" id="lockBtn" onclick="toggleLock()" style="font-size:12px;color:#c0392b">🔒 โหมดดูอย่างเดียว</button>
     <button class="btn" onclick="showSnapshots()" style="background:#7c3aed;color:#fff" title="สำรอง/กู้คืนข้อมูล">💾 Backup</button>
     <button class="btn btn-success" onclick="exportCSV()">↓ CSV</button>
@@ -9467,6 +9468,49 @@ function checkExpiryAlert(){
   + (expiring.length ? '<span style="color:#c05800;font-weight:700">🟡 ใกล้หมดอายุ: '+expiring.length+' รายการ</span>' : '');
 }
 setTimeout(checkExpiryAlert, 3000);
+
+// ── PWA Install ──
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = '';
+});
+async function installPWA() {
+  if (!deferredInstallPrompt) {
+    // Fallback for iOS / browsers that don't support beforeinstallprompt
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+    if (isIOS) {
+      alert('วิธีติดตั้งบน iOS:\n1. กดปุ่ม Share (สี่เหลี่ยมพร้อมลูกศรขึ้น)\n2. เลื่อนลง เลือก "Add to Home Screen"\n3. กด Add');
+    } else {
+      alert('เบราว์เซอร์ของคุณไม่รองรับการติดตั้ง หรือติดตั้งไปแล้ว\nลองใช้ Chrome/Edge บน Android หรือ Desktop');
+    }
+    return;
+  }
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    document.getElementById('installBtn').style.display = 'none';
+  }
+  deferredInstallPrompt = null;
+}
+window.addEventListener('appinstalled', () => {
+  const btn = document.getElementById('installBtn');
+  if (btn) btn.style.display = 'none';
+  deferredInstallPrompt = null;
+});
+// Show iOS install hint button (since iOS Safari doesn't fire beforeinstallprompt)
+(function(){
+  const ua = navigator.userAgent;
+  const isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isIOS && !isStandalone) {
+    const btn = document.getElementById('installBtn');
+    if (btn) btn.style.display = '';
+  }
+})();
 
 </script>
 </div><!-- /.app -->
