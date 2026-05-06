@@ -422,15 +422,17 @@ body{
   height:76px!important;
   padding:0 28px!important;
   position:relative;
-  overflow:hidden;
+  /* overflow removed — was clipping More menu dropdown.
+     ::before is constrained by inset:0 anyway. */
 }
-/* Subtle gold highlights */
+/* Subtle gold highlights — clipped to header bounds */
 .header::before{
   content:'';
   position:absolute;
   inset:0;
   background:radial-gradient(circle at 20% 0%,rgba(201,169,97,0.08),transparent 50%),radial-gradient(circle at 90% 100%,rgba(201,169,97,0.06),transparent 60%);
   pointer-events:none;
+  overflow:hidden;
 }
 .header > *{position:relative;z-index:1}
 
@@ -1644,7 +1646,7 @@ button,.btn,.view-btn,.room-btn,a,
   border-radius:10px;
   box-shadow:0 16px 40px rgba(10,31,68,0.18),0 0 0 1px rgba(201,169,97,0.08);
   padding:6px;
-  z-index:1500;
+  z-index:9999;
   animation:bcfMenuSlide 0.18s cubic-bezier(0.4,0,0.2,1);
 }
 .bcf-more-menu.open{display:block}
