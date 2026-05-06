@@ -13,11 +13,14 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1f44">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap');
 
 :root{
+  color-scheme:light only;
   /* ── Banking/Fintech Blue Palette ── */
   --primary:#0052cc;
   --primary-dark:#003d99;
@@ -302,8 +305,29 @@ input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0
 .highlight-banner button:hover{background:rgba(255,255,255,0.35)}
 
 /* ── FLASH CARDS ── */
-.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:4px}
-.fc-card{background:#fff;border:1.5px solid var(--gray-200);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow);transition:transform 0.15s,box-shadow 0.15s}
+.fc-grid{
+  /* Masonry layout via CSS columns — cards flow top-to-bottom, then next column */
+  column-count:auto;
+  column-width:280px;
+  column-gap:14px;
+  padding:4px;
+}
+.fc-card{
+  background:#fff;
+  border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-xl);
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform 0.15s,box-shadow 0.15s;
+  /* Critical for masonry: prevent cards from breaking across columns */
+  break-inside:avoid;
+  -webkit-column-break-inside:avoid;
+  page-break-inside:avoid;
+  /* Cards stack vertically within a column with margin */
+  display:inline-block;
+  width:100%;
+  margin-bottom:14px;
+}
 .fc-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .fc-header{padding:14px 16px 10px;border-bottom:1px solid var(--gray-100)}
 .fc-name{font-size:14px;font-weight:700;color:var(--gray-900);margin-bottom:2px}
@@ -456,20 +480,21 @@ body{
 .bcf-version-pill{
   display:inline-block;
   font-family:'Sarabun',sans-serif;
-  font-size:9.5px;
+  font-size:9px;
   color:#c9a961;
   background:rgba(201,169,97,0.12);
   border:1px solid rgba(201,169,97,0.35);
-  padding:2px 9px;
-  border-radius:11px;
-  margin-left:10px;
+  padding:1px 8px;
+  border-radius:10px;
+  margin-left:8px;
   cursor:pointer;
   transition:all 0.2s;
-  vertical-align:middle;
+  vertical-align:1px;
   font-weight:600;
   letter-spacing:0.04em;
   text-transform:uppercase;
   font-variant-numeric:tabular-nums;
+  text-decoration:none;
 }
 .bcf-version-pill:hover{
   background:rgba(201,169,97,0.22);
@@ -543,11 +568,20 @@ body{
   border-color:#c0392b!important;
 }
 
-/* Mobile menu button on dark header */
+/* Mobile menu button — hidden on desktop, shown only on mobile */
 .header .mobile-menu-btn{
+  display:none!important;
   color:#c9a961!important;
   background:rgba(201,169,97,0.1)!important;
   border:1px solid rgba(201,169,97,0.3)!important;
+  width:38px;
+  height:38px;
+  border-radius:8px;
+  font-size:18px;
+  cursor:pointer;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
 }
 .header .mobile-menu-btn:hover{
   background:rgba(201,169,97,0.25)!important;
@@ -557,6 +591,7 @@ body{
 /* Mobile responsive — compact */
 @media (max-width:767px),(max-height:500px){
   .header{height:auto!important;padding:10px 14px!important;flex-wrap:wrap}
+  .header .mobile-menu-btn{display:inline-flex!important}
   .bcf-logo-frame{width:42px;height:42px}
   .bcf-brand-title{font-size:18px}
   .bcf-brand-subtitle{font-size:10px}
