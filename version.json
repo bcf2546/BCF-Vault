@@ -1,7 +1,7 @@
 {
-  "edition": "2026.5",
-  "version": "18.17",
-  "build": "20260507-0056",
-  "buildTime": "2026-05-07T02:06:18.505443+07:00",
-  "notes": "Premium navy header + Edition versioning"
+  "edition": "2026.6",
+  "version": "18.18",
+  "build": "20260507-0300",
+  "buildTime": "2026-05-07T08:52:26.189669",
+  "notes": "PWA enhancements — service worker, offline support, complete manifest with shortcuts"
 }

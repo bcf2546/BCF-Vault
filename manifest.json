@@ -1,19 +1,17 @@
 {
-  "name": "ผังห้องเย็น BCF — Black Chicken Farm",
-  "short_name": "BCF",
-  "description": "ระบบจัดการห้องเย็น Black Chicken Farm (กาญจนบุรี)",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "any",
-  "background_color": "#f7f4ec",
-  "theme_color": "#0a1f44",
+  "name": "BCF Vault — ระบบจัดการห้องเย็น",
+  "short_name": "BCF Vault",
+  "description": "ระบบจัดการสต็อกและผังห้องเย็นสำหรับ Black Chicken Farm",
   "lang": "th",
   "dir": "ltr",
-  "categories": [
-    "business",
-    "productivity"
-  ],
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "orientation": "any",
+  "theme_color": "#0a1f44",
+  "background_color": "#0a1f44",
+  "categories": ["productivity", "business", "utilities"],
   "icons": [
     {
       "src": "favicon-192.png",
@@ -38,6 +36,36 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "ผังห้องเย็น",
+      "short_name": "ผังห้อง",
+      "description": "ดูผังห้องเย็นทั้งหมด",
+      "url": "./index.html#map",
+      "icons": [{"src": "favicon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "สรุปสินค้า",
+      "short_name": "สรุป",
+      "description": "ดูรายการสินค้าทั้งหมด",
+      "url": "./index.html#summary",
+      "icons": [{"src": "favicon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "ออกใบเสร็จ",
+      "short_name": "บิล",
+      "description": "ออกใบเสร็จใหม่",
+      "url": "./index.html#invoice",
+      "icons": [{"src": "favicon-192.png", "sizes": "192x192"}]
+    }
+  ],
+  "prefer_related_applications": false
 }

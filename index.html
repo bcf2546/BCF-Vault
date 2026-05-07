@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
+<meta name="description" content="BCF Vault — ระบบจัดการสต็อกและผังห้องเย็นสำหรับ Black Chicken Farm ฟาร์มไก่ดำ จ.กาญจนบุรี">
+<meta name="application-name" content="BCF Vault">
+<meta name="author" content="Black Chicken Farm">
+<meta name="robots" content="noindex,nofollow">
 <!-- iOS PWA meta — enables fullscreen "Add to Home Screen" -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -969,8 +973,11 @@ button:focus-visible,
   to{opacity:1}
 }
 
-/* ── Sidebar mobile (slide-in from left) ── */
-@media (max-width:767px),(max-height:500px){
+/* ── Sidebar mobile/iPad portrait (slide-in from left) ──
+   Breakpoint matches isMobileMode() in JS (≤900px) so they stay in sync.
+   Without this match, backdrop appears on iPad portrait but sidebar
+   doesn't slide → blocks all clicks. */
+@media (max-width:900px),(max-height:500px){
   .sidebar{
     position:fixed!important;
     top:0;left:0;
@@ -1426,7 +1433,7 @@ button:focus-visible,
     font-size:11px!important;
   }
 
-  /* === SIDEBAR — slightly slimmer === */
+  /* === SIDEBAR — slightly slimmer (only on landscape; portrait uses overlay) === */
   .sidebar{
     width:190px!important;
   }
@@ -1777,6 +1784,31 @@ button,.btn,.view-btn,.room-btn,a,
   .view{animation-duration:0.15s}
 }
 
+/* ════════════════════════════════════════════════════════════════
+   FINAL OVERRIDE — iPad portrait sidebar overlay
+   Must come AFTER iPad-range rules (line 1395+) to win specificity war.
+   Sidebar acts as overlay (slide-in) when ≤900px (matches isMobileMode JS).
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width:900px),(max-height:500px){
+  .sidebar{
+    position:fixed!important;
+    top:0!important;
+    left:0!important;
+    height:100vh!important;
+    width:260px!important;
+    z-index:999!important;
+    background:#fff!important;
+    box-shadow:4px 0 24px rgba(10,31,68,0.2)!important;
+    transform:translateX(-100%)!important;
+    transition:transform 0.25s cubic-bezier(0.4,0,0.2,1)!important;
+    padding-top:16px!important;
+    overflow-y:auto!important;
+  }
+  .sidebar.mobile-open{
+    transform:translateX(0)!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1790,7 +1822,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.5</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.6</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -1886,10 +1918,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.17";
-const BCF_BUILD = "20260507-0056";
+const BCF_VERSION = "18.18";
+const BCF_BUILD = "20260507-0300";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.5";
+const BCF_EDITION = "2026.6";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -10361,6 +10393,33 @@ function syncNow(){
 }
 
 // Warn user before leaving if they have unsynced changes
+// ════════════════════════════════════════════════════════════════
+// SERVICE WORKER REGISTRATION — enables offline support & faster loads
+// ════════════════════════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  // Register on load to avoid blocking initial render
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js')
+      .then(function(reg){
+        console.log('[PWA] Service worker registered:', reg.scope);
+        // Check for updates every 30 minutes
+        setInterval(function(){
+          reg.update().catch(function(){});
+        }, 30 * 60 * 1000);
+      })
+      .catch(function(err){
+        console.log('[PWA] Service worker registration failed:', err);
+      });
+  });
+  // When a new SW takes over, reload to get fresh content
+  let bcfReloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(bcfReloading) return;
+    bcfReloading = true;
+    // Don't auto-reload — let user trigger via update banner instead
+  });
+}
+
 window.addEventListener('beforeunload', function(e){
   if(invoicesPendingSync || customersPendingSync || productsPendingSync || dataPendingSync){
     var msg = 'ข้อมูลยังไม่ได้ sync ขึ้น cloud — ถ้าปิดตอนนี้ข้อมูลอาจหาย!';
