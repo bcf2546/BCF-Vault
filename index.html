@@ -1822,7 +1822,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.6</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.7</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -1918,10 +1918,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.18";
-const BCF_BUILD = "20260507-0300";
+const BCF_VERSION = "18.19";
+const BCF_BUILD = "20260507-0700";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.6";
+const BCF_EDITION = "2026.7";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -2205,10 +2205,31 @@ function showSnapshots(){
   document.body.appendChild(overlay);
 }
 
-function save(dirtyKeys){
+// Throttled localStorage writer — coalesces multiple save() calls into one
+// disk I/O burst when the user is rapidly editing. Memory state is updated
+// immediately; localStorage is only written after 200ms of idle. This prevents
+// UI freezes from sync I/O during heavy edit sessions.
+var _storageWriteTimer = null;
+function _flushStorageWrites(){
   try{localStorage.setItem('crm_v6',JSON.stringify(data));}catch(e){}
   try{localStorage.setItem('crm_hist_v6',JSON.stringify(history.slice(0, 300)));}catch(e){}
   try{localStorage.setItem('crm_tx_v1',JSON.stringify(txList));}catch(e){}
+  _storageWriteTimer = null;
+}
+function _scheduleStorageWrite(){
+  if(_storageWriteTimer) return; // already scheduled
+  _storageWriteTimer = setTimeout(_flushStorageWrites, 200);
+}
+// Force flush before navigation — ensures data isn't lost if user closes tab
+window.addEventListener('pagehide', _flushStorageWrites);
+window.addEventListener('beforeunload', _flushStorageWrites);
+
+function save(dirtyKeys){
+  // Invalidate getAllItems cache — data has changed
+  window._dataMutationCount = (window._dataMutationCount || 0) + 1;
+
+  // Schedule disk write (coalesces rapid edits)
+  _scheduleStorageWrite();
   makeSnapshot('auto'); // throttled internally
   // Mark data dirty so pull won't overwrite and push is guaranteed
   dataPendingSync = true;
@@ -2331,11 +2352,16 @@ function cellExpStatus(items){
 // ── Debounce utility — for input filters that trigger heavy renders ──
 function bcfDebounce(fn, wait){
   var timer = null;
-  return function(){
+  var debounced = function(){
     var args = arguments, ctx = this;
     if(timer) clearTimeout(timer);
-    timer = setTimeout(function(){ fn.apply(ctx, args); }, wait);
+    timer = setTimeout(function(){ timer = null; fn.apply(ctx, args); }, wait);
   };
+  // Allow caller to cancel pending invocation
+  debounced.cancel = function(){
+    if(timer){ clearTimeout(timer); timer = null; }
+  };
+  return debounced;
 }
 // Debounced versions of heavy filter functions (defined later) — created on demand
 window._bcfDebouncedFilters = {};
@@ -2349,6 +2375,14 @@ function bcfDebouncedCall(fnName, wait){
   }
   window._bcfDebouncedFilters[fnName]();
 }
+// Cancel ALL pending debounced filter calls — used when switching views
+function bcfCancelAllDebounced(){
+  if(!window._bcfDebouncedFilters) return;
+  Object.keys(window._bcfDebouncedFilters).forEach(function(k){
+    var d = window._bcfDebouncedFilters[k];
+    if(d && typeof d.cancel === 'function') d.cancel();
+  });
+}
 
 function setRoom(r){
   activeRoom=r;
@@ -2357,6 +2391,12 @@ function setRoom(r){
 }
 function setView(v){
   activeView=v;
+
+  // Cancel any pending debounced filter calls — stops stale renders
+  // hitting DOM elements that no longer exist after view change.
+  // (Was the root cause of "click ไม่ตอบสนอง" on iPad after using filter.)
+  bcfCancelAllDebounced();
+
   document.querySelectorAll('.view-btn').forEach((b,i)=>b.classList.toggle('active',['dashboard','map','summary','search','history','transfer','txlog','move','flashcard','stockreport','customers','products','invoice','invoicehist','salesreport'][i]===v));
 
   // Clear current content immediately to release memory & event handlers
@@ -2368,8 +2408,20 @@ function setView(v){
 
   // Defer heavy render to next animation frame so the DOM clear paints first.
   // Without this, iPad Safari shows stale content until render finishes.
+  // Wrap renderView in try/catch so a render error doesn't lock the UI.
   requestAnimationFrame(function(){
-    renderView();
+    try{
+      renderView();
+    }catch(err){
+      console.error('[setView] render error:', err);
+      if(mainContent){
+        mainContent.innerHTML = '<div style="padding:40px;color:#c0392b;text-align:center">'
+          + '<div style="font-size:24px;margin-bottom:8px">⚠️</div>'
+          + '<div>เกิดข้อผิดพลาดในการแสดงหน้านี้</div>'
+          + '<div style="font-size:11px;color:#888;margin-top:8px">' + (err && err.message ? err.message : 'unknown error') + '</div>'
+          + '<button class="btn" onclick="location.reload()" style="margin-top:16px">โหลดใหม่</button></div>';
+      }
+    }
     // Premium UX — re-trigger fade-in animation on the main content area
     // Skip animation for heavy views OR on mobile/iPad (≤1279px) — large tables freeze Safari
     var heavyViews = ['summary','search','history','txlog','flashcard','stockreport','salesreport','invoicehist'];
@@ -3117,7 +3169,25 @@ function findSameLot(name, refLot){
   document.body.appendChild(overlay);
 }
 
+// ── getAllItems memoization ──
+// Cache result and only recompute when `data` changes.
+// Invalidated by setting `_allItemsCacheKey = null` after any data mutation.
+var _allItemsCache = null;
+var _allItemsCacheKey = null;
+
+function invalidateAllItemsCache(){
+  _allItemsCache = null;
+  _allItemsCacheKey = null;
+}
+
 function getAllItems(){
+  // Compute a cheap cache key — count of cells with items + total mutation count
+  // (we increment _dataMutationCount on every save/load)
+  var key = (window._dataMutationCount || 0) + ':' + Object.keys(data).length;
+  if(_allItemsCache && _allItemsCacheKey === key){
+    return _allItemsCache;
+  }
+
   const out=[];
   for(const[k,d] of Object.entries(data)){
     if(!d||!d.items)continue;
@@ -3133,6 +3203,9 @@ function getAllItems(){
       }
     }
   }
+
+  _allItemsCache = out;
+  _allItemsCacheKey = key;
   return out;
 }
 
@@ -3174,6 +3247,9 @@ function renderSummary(){
 }
 
 function applyFilter(){
+  const el=document.getElementById('summaryTable');
+  if(!el) return; // DOM was replaced (user switched view) — bail out silently
+
   const filterVal=document.getElementById('filterSel')?.value||'all';
   summaryFilter=filterVal;
   const lotQ=(document.getElementById('lotSearch')?.value||'').trim().toLowerCase();
@@ -3187,7 +3263,6 @@ function applyFilter(){
 
   if(lotQ) items=items.filter(i=>(i.lot||'').toLowerCase().includes(lotQ)||(i.name||'').toLowerCase().includes(lotQ));
 
-  const el=document.getElementById('summaryTable');
   if(!items.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📦</div>ไม่พบรายการ</div>`;return;}
 
   // Sort: expired first, then expiring, then by expiry date asc
@@ -3320,6 +3395,9 @@ function clearSearchFilter(){
 }
 
 function applySearchFilter(){
+  var el = document.getElementById('searchResults');
+  if(!el) return; // DOM was replaced (user switched view) — bail out silently
+
   var fProduct = document.getElementById('fProduct')?.value || '';
   var fLot     = (document.getElementById('fLot')?.value || '').trim().toLowerCase();
   var fMonth   = document.getElementById('fMonth')?.value || '';
@@ -3356,7 +3434,6 @@ function applySearchFilter(){
   });
 
   window._searchFilteredItems = items;
-  var el = document.getElementById('searchResults');
   var pdfBtn = document.getElementById('pdfBtn');
   if(pdfBtn) pdfBtn.style.display = items.length ? '' : 'none';
 
@@ -10371,6 +10448,8 @@ async function pullFromSheets(){
     try { makeSnapshot('post-pull'); } catch(e) {}
     setSyncUI('ok','เชื่อมต่อ Google Sheets ✓');
     setSyncTime();
+    // Invalidate getAllItems cache — data was just merged from cloud
+    window._dataMutationCount = (window._dataMutationCount || 0) + 1;
     var modalOpen = document.getElementById('modalBg') && document.getElementById('modalBg').classList.contains('open');
     if(!modalOpen && !isUserTypingInInvoice()){ renderView(); }
     // If we have pending changes that were blocked before,

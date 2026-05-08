@@ -1,7 +1,7 @@
 {
-  "edition": "2026.6",
-  "version": "18.18",
-  "build": "20260507-0300",
-  "buildTime": "2026-05-07T08:52:26.189669",
-  "notes": "PWA enhancements — service worker, offline support, complete manifest with shortcuts"
+  "edition": "2026.7",
+  "version": "18.19",
+  "build": "20260507-0700",
+  "buildTime": "2026-05-08T08:31:56.097888",
+  "notes": "Performance + stability — memoization, debounce cancellation, null guards, throttled I/O, error recovery"
 }
