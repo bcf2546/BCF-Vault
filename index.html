@@ -2409,6 +2409,27 @@ window.addEventListener('error', function(e){
 window.addEventListener('unhandledrejection', function(e){
   bcfDebugLog('PROMISE ERR: '+(e.reason && e.reason.message || e.reason || '?'), 'err');
 });
+
+// CAPTURE-PHASE click logger — logs every click that reaches document.
+// If you tap a button and DON'T see "click on X" in the overlay, the
+// click is being intercepted earlier in the DOM by something invisible.
+document.addEventListener('click', function(e){
+  if(!window._bcfDebugEnabled) return;
+  var t = e.target;
+  var label = t.tagName.toLowerCase();
+  if(t.id) label += '#'+t.id;
+  if(t.className && typeof t.className === 'string') label += '.'+t.className.split(' ').slice(0,2).join('.');
+  // truncate label
+  if(label.length > 40) label = label.substring(0,40)+'…';
+  // Find nearest button/clickable parent
+  var btn = t.closest('button, [onclick], .view-btn, .room-btn, .btn');
+  if(btn && btn !== t){
+    var btext = (btn.textContent||'').trim().substring(0,20);
+    bcfDebugLog('CLICK: '+label+' → btn:'+btext);
+  } else {
+    bcfDebugLog('CLICK: '+label);
+  }
+}, true); // capture phase
 function bcfDebugRender(){
   var el = document.getElementById('bcfDebugOverlay');
   if(!window._bcfDebugEnabled){
