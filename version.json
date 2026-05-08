@@ -1,7 +1,7 @@
 {
-  "edition": "2026.9",
-  "version": "18.21",
-  "build": "20260508-1620",
-  "buildTime": "2026-05-08T09:21:47.605282",
-  "notes": "iOS click fix — touchend handler bypasses Safari's click cancellation during sidebar animation"
+  "edition": "2026.10",
+  "version": "18.22",
+  "build": "20260508-1640",
+  "buildTime": "2026-05-08T09:29:52.626480",
+  "notes": "Mobile smoothness — disable backdrop blur + view animation + faster sidebar + instant close"
 }

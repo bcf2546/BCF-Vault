@@ -1800,13 +1800,32 @@ button,.btn,.view-btn,.room-btn,a,
     background:#fff!important;
     box-shadow:4px 0 24px rgba(10,31,68,0.2)!important;
     transform:translateX(-100%)!important;
-    transition:transform 0.25s cubic-bezier(0.4,0,0.2,1)!important;
+    transition:transform 0.18s cubic-bezier(0.4,0,0.2,1)!important;
     padding-top:16px!important;
     overflow-y:auto!important;
   }
   .sidebar.mobile-open{
     transform:translateX(0)!important;
   }
+
+  /* ── Mobile performance: kill expensive backdrop-filter blur ──
+     iOS Safari renders backdrop-filter using CPU — very slow on
+     animated elements. Replace with solid darker overlay instead. */
+  .mobile-sidebar-backdrop{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    background:rgba(10,31,68,0.55)!important; /* slightly darker to compensate */
+  }
+  .modal-bg{
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  /* Disable view fade-in animation on mobile — saves repaint */
+  .view{animation:none!important}
+  /* Faster sidebar slide (less perceived lag) */
+
+  /* ── Disable expensive header glow effect on mobile ── */
+  .header::before{display:none!important}
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -1877,7 +1896,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.9</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.10</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -1973,10 +1992,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.21";
-const BCF_BUILD = "20260508-1620";
+const BCF_VERSION = "18.22";
+const BCF_BUILD = "20260508-1640";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.9";
+const BCF_EDITION = "2026.10";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -9420,15 +9439,13 @@ document.addEventListener('keydown', function(e){
   if(e.key === 'Escape') closeHeaderMenu();
 });
 
-// ปิด sidebar อัตโนมัติเมื่อเลือกเมนูบนมือถือ
+// ปิด sidebar อัตโนมัติเมื่อเลือกเมนูบนมือถือ — ปิดทันที เพื่อความลื่น
 document.addEventListener('click', function(e){
   var target = e.target.closest('.room-btn, .view-btn');
   if(!target) return; // not a menu click — ignore
-  var mm = isMobileMode();
-  bcfDebugLog('menu-click handler: isMobileMode='+mm+' w='+window.innerWidth);
-  if(!mm) return; // desktop ไม่ต้องปิด
-  bcfDebugLog('  scheduling closeMobileSidebar in 150ms');
-  setTimeout(closeMobileSidebar, 150); // รอให้ render เสร็จ
+  if(!isMobileMode()) return; // desktop ไม่ต้องปิด
+  // Close immediately — feels snappier than delayed close
+  closeMobileSidebar();
 });
 
 // ── iOS click cancellation workaround ──
@@ -9484,6 +9501,11 @@ document.addEventListener('click', function(e){
         var fn = new Function('event', btn.getAttribute('onclick'));
         fn.call(btn, e);
       }catch(err){ bcfDebugLog('inline onclick err: '+err.message, 'err'); }
+    }
+    // If this was a sidebar menu button, close sidebar immediately
+    // (since click event may not fire after preventDefault)
+    if(btn.classList.contains('view-btn') || btn.classList.contains('room-btn')){
+      if(isMobileMode()) closeMobileSidebar();
     }
   });
 
