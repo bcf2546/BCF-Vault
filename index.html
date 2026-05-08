@@ -1809,6 +1809,61 @@ button,.btn,.view-btn,.room-btn,a,
   }
 }
 
+/* ════════════════════════════════════════════════════════════════
+   PAGINATION — for large tables (summary, search, history, reports)
+   Mobile-friendly tap targets, navy/gold theme
+   ════════════════════════════════════════════════════════════════ */
+.bcf-pager{
+  background:#fff;
+  border-top:1px solid rgba(10,31,68,0.06);
+  border-radius:0 0 8px 8px;
+  margin-top:-1px;
+}
+.bcf-pager-btn{
+  background:#fff;
+  border:1px solid rgba(10,31,68,0.12);
+  color:#0a1f44;
+  padding:8px 14px;
+  border-radius:6px;
+  font-family:'Sarabun',sans-serif;
+  font-size:13px;
+  font-weight:500;
+  cursor:pointer;
+  min-height:38px;
+  min-width:80px;
+  transition:all 0.15s ease;
+  -webkit-appearance:none;
+}
+.bcf-pager-btn:hover:not(.disabled){
+  background:#0a1f44;
+  color:#c9a961;
+  border-color:#0a1f44;
+  transform:translateY(-1px);
+  box-shadow:0 2px 6px rgba(10,31,68,0.15);
+}
+.bcf-pager-btn:active:not(.disabled){
+  transform:translateY(0);
+  box-shadow:none;
+}
+.bcf-pager-btn.disabled,
+.bcf-pager-btn:disabled{
+  opacity:0.35;
+  cursor:not-allowed;
+  background:rgba(10,31,68,0.03);
+}
+
+/* Mobile pager — slightly more compact */
+@media (max-width:640px){
+  .bcf-pager{padding:10px 8px!important;gap:4px!important}
+  .bcf-pager-btn{
+    padding:8px 10px;
+    font-size:12px;
+    min-width:70px;
+    min-height:40px;
+  }
+  .bcf-pager-info{padding:0 6px!important;font-size:12px!important}
+}
+
 </style>
 </head>
 <body>
@@ -1822,7 +1877,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.7</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.8</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -1918,10 +1973,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.19";
-const BCF_BUILD = "20260507-0700";
+const BCF_VERSION = "18.20";
+const BCF_BUILD = "20260508-0900";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.7";
+const BCF_EDITION = "2026.8";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -2382,6 +2437,128 @@ function bcfCancelAllDebounced(){
     var d = window._bcfDebouncedFilters[k];
     if(d && typeof d.cancel === 'function') d.cancel();
   });
+}
+
+// ════════════════════════════════════════════════════════════════
+// PAGINATION UTILITY — for large tables (summary, search, history, etc.)
+// Mobile: 30 rows/page · Desktop: 100 rows/page
+// Each view has its own page state (keyed by pageKey).
+// ════════════════════════════════════════════════════════════════
+window._bcfPageState = {}; // { pageKey: currentPage (1-indexed) }
+
+function bcfPageSize(){
+  return window.innerWidth <= 900 ? 30 : 100;
+}
+
+function bcfGetPage(pageKey){
+  return window._bcfPageState[pageKey] || 1;
+}
+
+function bcfSetPage(pageKey, page){
+  window._bcfPageState[pageKey] = page;
+}
+
+// Reset page when filter changes — keeps user on page 1 of new results
+function bcfResetPage(pageKey){
+  window._bcfPageState[pageKey] = 1;
+}
+
+// Slice items array for the current page + return pagination control HTML
+//
+// Usage:
+//   var paged = bcfPaginate(items, 'summary');
+//   tbl += renderRows(paged.items);
+//   tbl += paged.controls;
+//
+// Returns: { items: sliced array, controls: HTML string, total, page, totalPages, showAll }
+function bcfPaginate(items, pageKey, opts){
+  opts = opts || {};
+  var total = items.length;
+  var showAll = !!window._bcfShowAll && window._bcfShowAll[pageKey];
+  var pageSize = opts.pageSize || bcfPageSize();
+  var totalPages = Math.max(1, Math.ceil(total / pageSize));
+  var page = Math.min(bcfGetPage(pageKey), totalPages);
+  if(page < 1) page = 1;
+
+  // If "show all" is enabled OR total <= pageSize, return everything
+  if(showAll || total <= pageSize){
+    return {
+      items: items,
+      controls: total > pageSize
+        ? '<div class="bcf-pager-info" style="text-align:center;padding:12px;font-size:12px;color:#5a6478">'
+          + 'แสดงทั้งหมด <strong>'+total.toLocaleString()+'</strong> รายการ '
+          + '<button class="btn btn-sm" onclick="bcfTogglePagination(\''+pageKey+'\',false)" style="margin-left:8px;font-size:11px">📄 แบ่งหน้า</button>'
+          + '</div>'
+        : '',
+      total: total, page: 1, totalPages: 1, showAll: true
+    };
+  }
+
+  var start = (page - 1) * pageSize;
+  var end = Math.min(start + pageSize, total);
+  var sliced = items.slice(start, end);
+
+  // Build pagination controls
+  var ctrl = '<div class="bcf-pager" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 12px;flex-wrap:wrap;font-size:13px">';
+
+  // Prev button
+  ctrl += '<button class="bcf-pager-btn'+(page<=1?' disabled':'')+'" '
+       + (page<=1?'disabled ':'')
+       + 'onclick="bcfGoToPage(\''+pageKey+'\','+(page-1)+')">‹ ก่อนหน้า</button>';
+
+  // Page info
+  ctrl += '<div class="bcf-pager-info" style="display:inline-flex;flex-direction:column;align-items:center;padding:0 10px">'
+       + '<div style="font-weight:700;color:#0a1f44">หน้า '+page+' / '+totalPages+'</div>'
+       + '<div style="font-size:10px;color:#5a6478;font-variant-numeric:tabular-nums">รายการ '+(start+1).toLocaleString()+'-'+end.toLocaleString()+' จาก '+total.toLocaleString()+'</div>'
+       + '</div>';
+
+  // Next button
+  ctrl += '<button class="bcf-pager-btn'+(page>=totalPages?' disabled':'')+'" '
+       + (page>=totalPages?'disabled ':'')
+       + 'onclick="bcfGoToPage(\''+pageKey+'\','+(page+1)+')">ถัดไป ›</button>';
+
+  // Show all toggle
+  ctrl += '<button class="btn btn-sm" onclick="bcfTogglePagination(\''+pageKey+'\',true)" style="margin-left:6px;font-size:11px;color:#5a6478;background:transparent;border:1px solid rgba(10,31,68,0.12)">📋 ดูทั้งหมด</button>';
+
+  ctrl += '</div>';
+
+  return {
+    items: sliced,
+    controls: ctrl,
+    total: total,
+    page: page,
+    totalPages: totalPages,
+    showAll: false
+  };
+}
+
+// Page navigation — re-renders current view
+function bcfGoToPage(pageKey, page){
+  bcfSetPage(pageKey, page);
+  // Re-render whichever view this pagination belongs to
+  if(typeof window._bcfPageRerenderers === 'object' && window._bcfPageRerenderers[pageKey]){
+    try{ window._bcfPageRerenderers[pageKey](); }
+    catch(e){ console.error('[bcfGoToPage] rerender error:', e); }
+  }
+  // Scroll to top of content for better UX
+  var content = document.getElementById('mainContent');
+  if(content) content.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// Toggle "show all" mode for a pagination key
+window._bcfShowAll = {};
+function bcfTogglePagination(pageKey, showAll){
+  window._bcfShowAll[pageKey] = !!showAll;
+  if(showAll) bcfSetPage(pageKey, 1); // reset for when user goes back
+  if(window._bcfPageRerenderers && window._bcfPageRerenderers[pageKey]){
+    try{ window._bcfPageRerenderers[pageKey](); }catch(e){}
+  }
+}
+
+// Register a re-render callback for a pagination key — called by bcfGoToPage
+window._bcfPageRerenderers = {};
+function bcfRegisterRerenderer(pageKey, fn){
+  window._bcfPageRerenderers[pageKey] = fn;
 }
 
 function setRoom(r){
@@ -3413,6 +3590,11 @@ function applyFilter(){
   if(!el) return; // DOM was replaced (user switched view) — bail out silently
 
   const filterVal=document.getElementById('filterSel')?.value||'all';
+  // Reset to page 1 when filter changes
+  if(window._lastSummaryFilter !== filterVal+'|'+(document.getElementById('lotSearch')?.value||'')){
+    bcfResetPage('summary');
+    window._lastSummaryFilter = filterVal+'|'+(document.getElementById('lotSearch')?.value||'');
+  }
   summaryFilter=filterVal;
   const lotQ=(document.getElementById('lotSearch')?.value||'').trim().toLowerCase();
   let items=getAllItems();
@@ -3436,11 +3618,15 @@ function applyFilter(){
     return 0;
   });
 
+  // Apply pagination — only render current page rows
+  var paged = bcfPaginate(items, 'summary');
+  bcfRegisterRerenderer('summary', applyFilter);
+
   let tbl=`<table class="data-table"><thead><tr>
     <th>ห้อง</th><th>ช่อง</th><th>สินค้า</th><th>LOT (วันผลิต)</th><th>วันหมดอายุ</th><th>สถานะ</th><th>จำนวน</th><th>หมายเหตุ</th>
   </tr></thead><tbody>`;
 
-  for(const it of items){
+  for(const it of paged.items){
     const st=it.expStatus;
     const rowCls=st==='expired'?'row-expired':st==='expiring'?'row-expiring':'';
     const tagHtml=st==='expired'?'<span class="tag tag-exp">หมดอายุ</span>':st==='expiring'?'<span class="tag tag-soon">ใกล้หมด</span>':st==='ok'?'<span class="tag tag-ok">ปกติ</span>':'<span style="color:#bbb;font-size:11px">—</span>';
@@ -3458,6 +3644,7 @@ function applyFilter(){
     </tr>`;
   }
   tbl+=`</tbody></table>`;
+  tbl+=paged.controls; // Add pagination controls below table
   el.innerHTML=tbl;
 }
 
@@ -3613,11 +3800,15 @@ function applySearchFilter(){
     + '<div class="stat-card danger"><div class="stat-lbl">หมดอายุแล้ว</div><div class="stat-val">'+expired+'</div></div>'
     + '</div>';
 
+  // Apply pagination
+  var paged = bcfPaginate(items, 'search');
+  bcfRegisterRerenderer('search', applySearchFilter);
+
   html += '<table class="data-table"><thead><tr>'
     + '<th>ห้องเย็น</th><th>ช่อง</th><th>สินค้า</th><th>LOT</th><th>วันหมดอายุ</th><th>สถานะ</th><th>จำนวน</th><th>หมายเหตุ</th>'
     + '</tr></thead><tbody>';
 
-  items.forEach(function(it){
+  paged.items.forEach(function(it){
     var st = it.expStatus;
     var rowBg = st==='expired'?'#fff5f5':st==='expiring'?'#fffaf0':'';
     var tagHtml = st==='expired'?'<span class="tag tag-exp">หมดอายุ</span>'
@@ -3637,6 +3828,7 @@ function applySearchFilter(){
   });
 
   html += '</tbody></table>';
+  html += paged.controls; // Add pagination controls
   el.innerHTML = html;
 }
 
@@ -3849,11 +4041,15 @@ function buildHistList(){
     return;
   }
 
+  // Pagination
+  var paged = bcfPaginate(filtered, 'history');
+  bcfRegisterRerenderer('history', buildHistList);
+
   var totalTxt = filtered.length < merged.length ? ' (จากทั้งหมด '+merged.length+' รายการ)' : '';
   var html = '<div style="font-size:12px;color:#667085;margin-bottom:8px">แสดง '+filtered.length+' รายการ'+totalTxt+'</div>';
   html += '<div style="display:flex;flex-direction:column;gap:6px">';
 
-  filtered.slice(0,300).forEach(function(hh){
+  paged.items.forEach(function(hh){
     var room = ROOMS[hh.room]?ROOMS[hh.room].name:(hh.room||'');
     var tColor, tBg;
     if(hh.type==='ลบ' || hh.type==='ลบใบเสร็จ' || hh.type==='ลบลูกค้า' || hh.type==='ลบสินค้า'){ tColor='#c0392b'; tBg='#ffecec'; }
@@ -3884,6 +4080,7 @@ function buildHistList(){
   });
 
   html += '</div>';
+  html += paged.controls;
   el.innerHTML = html;
 }
 
@@ -6626,6 +6823,10 @@ function buildStockReport(){
     + '<div>'+overallStr+'</div>'
     + '</div>';
 
+  // Pagination — by product (group keeps its lots together)
+  var paged = bcfPaginate(prods, 'stockreport');
+  bcfRegisterRerenderer('stockreport', buildStockReport);
+
   // Table
   html += '<div style="overflow-x:auto"><table class="data-table">'
     + '<thead><tr style="background:#f0f4f8">'
@@ -6638,7 +6839,7 @@ function buildStockReport(){
     + '<th>ห้อง / ช่อง</th>'
     + '</tr></thead><tbody>';
 
-  prods.forEach(function(prod){
+  paged.items.forEach(function(prod){
     var rowspan = prod.lots.length;
     var grandStr = Object.entries(prod.grandTotal).map(function(e){
       return '<strong>'+e[1].toLocaleString()+'</strong> '+e[0];
@@ -6681,6 +6882,7 @@ function buildStockReport(){
   });
 
   html += '</tbody></table></div>';
+  html += paged.controls;
   el.innerHTML = html;
 }
 
@@ -8114,11 +8316,19 @@ function renderInvoiceHist(){
     el.innerHTML += '<div class="empty-state"><div class="empty-icon">📑</div>ยังไม่มีใบเสร็จ</div>';
     return;
   }
+
+  // Pagination — paginate but keep original index for action buttons
+  var indexedInvoices = invoiceList.map(function(inv, i){ return {inv:inv, idx:i}; });
+  var paged = bcfPaginate(indexedInvoices, 'invoicehist');
+  bcfRegisterRerenderer('invoicehist', renderInvoiceHist);
+
   var html = '<div style="overflow-x:auto"><table class="data-table" style="min-width:800px"><thead><tr>'
     +'<th>เลขที่บิล</th><th>วันที่</th><th>ลูกค้า</th><th>จำนวนรายการ</th>'
     +'<th>ยอดสุทธิ</th><th>วิธีชำระ</th><th style="text-align:center">สถานะ</th><th style="text-align:center">จัดการ</th>'
     +'</tr></thead><tbody>';
-  invoiceList.forEach(function(inv, i){
+  paged.items.forEach(function(entry){
+    var inv = entry.inv;
+    var i = entry.idx; // original index in invoiceList — required for buttons
     try {
     var dateStr = inv.date ? new Date(inv.date).toLocaleDateString('en-GB') : '';
     var payLabels = {cash:'เงินสด', transfer:'โอน', credit:'เครดิต', other:'อื่นๆ'};
@@ -8161,6 +8371,7 @@ function renderInvoiceHist(){
     }
   });
   html += '</tbody></table></div>';
+  html += paged.controls;
   el.innerHTML += html;
 }
 

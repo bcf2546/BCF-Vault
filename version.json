@@ -1,7 +1,7 @@
 {
-  "edition": "2026.7",
-  "version": "18.19",
-  "build": "20260507-0700",
-  "buildTime": "2026-05-08T08:31:56.097888",
-  "notes": "Performance + stability — memoization, debounce cancellation, null guards, throttled I/O, error recovery"
+  "edition": "2026.8",
+  "version": "18.20",
+  "build": "20260508-0900",
+  "buildTime": "2026-05-08T09:16:29.800590",
+  "notes": "Pagination — summary, search, history, stock report, invoice history (30 rows mobile / 100 desktop)"
 }
