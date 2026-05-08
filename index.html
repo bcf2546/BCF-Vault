@@ -2431,19 +2431,41 @@ window.addEventListener('unhandledrejection', function(e){
   bcfDebugLog('PROMISE ERR: '+(e.reason && e.reason.message || e.reason || '?'), 'err');
 });
 
-// Safe click tracker (won't cause render loops because bcfDebugLog is RAF-batched)
-// Uses BUBBLE phase (not capture) — runs after all onclick handlers, so we
-// see whether they fired or not.
+// Safe click tracker — CAPTURE PHASE so we see EVERY click that hits document,
+// even if it's blocked from reaching the actual button.
+// (won't cause render loops because bcfDebugLog is RAF-batched)
 document.addEventListener('click', function(e){
   if(!window._bcfDebugEnabled) return;
-  var btn = e.target.closest('button, [onclick], .view-btn, .room-btn');
-  if(!btn) return; // ignore non-button clicks
-  var label = btn.className && typeof btn.className === 'string'
-    ? btn.className.split(' ')[0]
-    : btn.tagName.toLowerCase();
-  var text = (btn.textContent||'').trim().substring(0,15);
-  bcfDebugLog('TAP: '+label+' "'+text+'"');
-});
+  var t = e.target;
+  var label = (t.tagName||'?').toLowerCase();
+  if(t.id) label += '#'+t.id;
+  if(t.className && typeof t.className === 'string'){
+    var cls = t.className.split(' ').filter(Boolean).slice(0,2).join('.');
+    if(cls) label += '.'+cls;
+  }
+  if(label.length > 35) label = label.substring(0,35)+'…';
+
+  // Find nearest clickable parent (if click was on text/icon inside button)
+  var btn = t.closest('button, [onclick], .view-btn, .room-btn, .btn');
+  if(btn && btn !== t){
+    var btext = (btn.textContent||'').trim().substring(0,15);
+    bcfDebugLog('TAP→'+label+' btn:"'+btext+'"');
+  } else {
+    bcfDebugLog('TAP→'+label);
+  }
+}, true); // capture phase = runs first, sees all clicks before stopPropagation
+
+// Also log touchstart on iOS — if you tap a button and see TOUCH but no TAP,
+// that means click event got eaten somewhere between touchstart and click
+document.addEventListener('touchstart', function(e){
+  if(!window._bcfDebugEnabled) return;
+  var t = e.target;
+  var btn = t.closest('button, [onclick], .view-btn, .room-btn, .btn');
+  if(btn){
+    var btext = (btn.textContent||'').trim().substring(0,15);
+    bcfDebugLog('TOUCH btn:"'+btext+'"');
+  }
+}, {passive:true, capture:true});
 function bcfDebugRender(){
   var el = document.getElementById('bcfDebugOverlay');
   if(!window._bcfDebugEnabled){
