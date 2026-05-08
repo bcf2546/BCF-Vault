@@ -1877,7 +1877,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.8</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.9</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -1973,10 +1973,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.20";
-const BCF_BUILD = "20260508-0900";
+const BCF_VERSION = "18.21";
+const BCF_BUILD = "20260508-1620";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.8";
+const BCF_EDITION = "2026.9";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -9430,6 +9430,67 @@ document.addEventListener('click', function(e){
   bcfDebugLog('  scheduling closeMobileSidebar in 150ms');
   setTimeout(closeMobileSidebar, 150); // รอให้ render เสร็จ
 });
+
+// ── iOS click cancellation workaround ──
+// Issue: when sidebar is sliding open (transform animation in progress),
+// iOS Safari cancels the click event if user taps a button mid-animation.
+// Touch events still fire — so we use touchend → trigger button's onclick manually.
+//
+// We track touchstart target + position; if touchend lands on same button without
+// significant movement (= not a scroll), we fire the onclick handler directly.
+(function(){
+  var touchStartTarget = null;
+  var touchStartX = 0, touchStartY = 0;
+  var TOUCH_SLOP = 10; // px movement allowed before considering it a scroll
+
+  document.addEventListener('touchstart', function(e){
+    if(!e.touches || !e.touches.length) return;
+    var btn = e.target.closest('.view-btn, .room-btn, .bcf-more-item');
+    if(!btn) return;
+    touchStartTarget = btn;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, {passive:true});
+
+  document.addEventListener('touchend', function(e){
+    if(!touchStartTarget) return;
+    var btn = touchStartTarget;
+    touchStartTarget = null;
+
+    if(!e.changedTouches || !e.changedTouches.length) return;
+    var dx = Math.abs(e.changedTouches[0].clientX - touchStartX);
+    var dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+    if(dx > TOUCH_SLOP || dy > TOUCH_SLOP){
+      bcfDebugLog('touch moved too much — treating as scroll');
+      return; // user was scrolling, not tapping
+    }
+
+    // Verify touch ended on the same button (or its child)
+    var endTarget = e.target.closest('.view-btn, .room-btn, .bcf-more-item');
+    if(endTarget !== btn) return;
+
+    // Fire onclick directly — bypasses iOS click cancellation
+    if(btn.onclick){
+      bcfDebugLog('TOUCHEND→firing onclick directly');
+      // Prevent the default click that may follow (avoid double-trigger)
+      e.preventDefault();
+      try{ btn.onclick.call(btn, e); }
+      catch(err){ bcfDebugLog('onclick err: '+err.message, 'err'); }
+    } else if(btn.getAttribute('onclick')){
+      // Inline onclick — execute manually
+      bcfDebugLog('TOUCHEND→eval onclick attr');
+      e.preventDefault();
+      try{
+        var fn = new Function('event', btn.getAttribute('onclick'));
+        fn.call(btn, e);
+      }catch(err){ bcfDebugLog('inline onclick err: '+err.message, 'err'); }
+    }
+  });
+
+  document.addEventListener('touchcancel', function(){
+    touchStartTarget = null;
+  });
+})();
 
 // ปิด sidebar ถ้าหน้าจอใหญ่ขึ้น (rotation, resize)
 window.addEventListener('resize', function(){

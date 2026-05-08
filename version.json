@@ -1,7 +1,7 @@
 {
-  "edition": "2026.8",
-  "version": "18.20",
-  "build": "20260508-0900",
-  "buildTime": "2026-05-08T09:16:29.800590",
-  "notes": "Pagination — summary, search, history, stock report, invoice history (30 rows mobile / 100 desktop)"
+  "edition": "2026.9",
+  "version": "18.21",
+  "build": "20260508-1620",
+  "buildTime": "2026-05-08T09:21:47.605282",
+  "notes": "iOS click fix — touchend handler bypasses Safari's click cancellation during sidebar animation"
 }
