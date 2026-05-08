@@ -9151,9 +9151,16 @@ function toggleMobileSidebar(){
   }
 }
 function closeMobileSidebar(){
+  bcfDebugLog('closeMobileSidebar()');
   var sidebar = document.querySelector('.sidebar');
   var backdrop = document.getElementById('mobileSidebarBackdrop');
-  if(sidebar) sidebar.classList.remove('mobile-open');
+  if(sidebar){
+    var wasOpen = sidebar.classList.contains('mobile-open');
+    sidebar.classList.remove('mobile-open');
+    bcfDebugLog('  sidebar wasOpen='+wasOpen+' → closed');
+  } else {
+    bcfDebugLog('  sidebar element NOT FOUND', 'err');
+  }
   if(backdrop) backdrop.classList.remove('active');
 }
 
@@ -9182,11 +9189,13 @@ document.addEventListener('keydown', function(e){
 
 // ปิด sidebar อัตโนมัติเมื่อเลือกเมนูบนมือถือ
 document.addEventListener('click', function(e){
-  if(!isMobileMode()) return; // desktop ไม่ต้องปิด
   var target = e.target.closest('.room-btn, .view-btn');
-  if(target){
-    setTimeout(closeMobileSidebar, 150); // รอให้ render เสร็จ
-  }
+  if(!target) return; // not a menu click — ignore
+  var mm = isMobileMode();
+  bcfDebugLog('menu-click handler: isMobileMode='+mm+' w='+window.innerWidth);
+  if(!mm) return; // desktop ไม่ต้องปิด
+  bcfDebugLog('  scheduling closeMobileSidebar in 150ms');
+  setTimeout(closeMobileSidebar, 150); // รอให้ render เสร็จ
 });
 
 // ปิด sidebar ถ้าหน้าจอใหญ่ขึ้น (rotation, resize)
