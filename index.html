@@ -2389,13 +2389,109 @@ function setRoom(r){
   document.querySelectorAll('.room-btn').forEach((b,i)=>b.classList.toggle('active',['room1','room2f1','room2f2','room5'][i]===r));
   if(activeView!=='map')setView('map');else renderView();
 }
+// ── ON-SCREEN DEBUG OVERLAY (for iPad/iPhone where there's no console) ── Tap-and-hold the BCF logo for 2 seconds to enable.
+// Shows last 25 events in a green floating box top-right.
+// Tap the overlay to clear all logs.
+var _bcfDebugLog = [];
+function bcfDebugLog(msg, type){
+  if(!window._bcfDebugEnabled) return;
+  var time = new Date().toTimeString().split(' ')[0];
+  var icon = type==='err' ? '❌' : type==='ok' ? '✅' : '•';
+  _bcfDebugLog.unshift('[' + time + '] ' + icon + ' ' + msg);
+  if(_bcfDebugLog.length > 25) _bcfDebugLog.pop();
+  bcfDebugRender();
+}
+
+// Capture ALL errors (sync, async, promise rejections) and show on overlay
+window.addEventListener('error', function(e){
+  bcfDebugLog('JS ERR: '+(e.message||'?')+' L'+(e.lineno||'?'), 'err');
+});
+window.addEventListener('unhandledrejection', function(e){
+  bcfDebugLog('PROMISE ERR: '+(e.reason && e.reason.message || e.reason || '?'), 'err');
+});
+function bcfDebugRender(){
+  var el = document.getElementById('bcfDebugOverlay');
+  if(!window._bcfDebugEnabled){
+    if(el) el.remove();
+    return;
+  }
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'bcfDebugOverlay';
+    el.style.cssText = 'position:fixed;top:60px;right:6px;width:280px;max-height:50vh;overflow-y:auto;background:rgba(0,0,0,0.9);color:#0f0;font-family:Menlo,Monaco,monospace;font-size:10px;line-height:1.4;padding:8px 10px;border-radius:8px;z-index:99998;border:1px solid #0f0;box-shadow:0 4px 16px rgba(0,255,0,0.3);-webkit-user-select:none;user-select:none';
+    el.onclick = function(ev){
+      ev.stopPropagation();
+      _bcfDebugLog = [];
+      bcfDebugLog('cleared');
+    };
+    document.body.appendChild(el);
+  }
+  var header = '<div style="color:#ff0;font-weight:bold;border-bottom:1px solid #0f0;padding-bottom:4px;margin-bottom:4px">🐛 BCF DEBUG (tap=clear)</div>';
+  var body = _bcfDebugLog.map(function(line){
+    var color = line.indexOf('❌')>=0 ? '#f55' : line.indexOf('✅')>=0 ? '#5f5' : '#0f0';
+    return '<div style="color:'+color+';margin:1px 0">' + line.replace(/</g,'&lt;') + '</div>';
+  }).join('');
+  el.innerHTML = header + body;
+}
+
+// Enable debug overlay 3 ways:
+//  1. Add #debug to URL: https://bcf2546.github.io/BCF-Vault/#debug
+//  2. Long-press logo for 2 seconds (works on touchscreen)
+//  3. Run bcfToggleDebug() from anywhere
+window.bcfToggleDebug = function(){
+  window._bcfDebugEnabled = !window._bcfDebugEnabled;
+  if(window._bcfDebugEnabled){
+    try{ localStorage.setItem('bcf_debug', '1'); }catch(e){}
+    bcfDebugLog('DEBUG ENABLED', 'ok');
+  } else {
+    try{ localStorage.removeItem('bcf_debug'); }catch(e){}
+    var el = document.getElementById('bcfDebugOverlay');
+    if(el) el.remove();
+  }
+};
+// Auto-enable from URL hash or saved preference
+(function(){
+  if(location.hash.indexOf('debug') >= 0
+     || location.search.indexOf('debug') >= 0
+     || (typeof localStorage !== 'undefined' && localStorage.getItem('bcf_debug') === '1')){
+    window._bcfDebugEnabled = true;
+    setTimeout(function(){ bcfDebugLog('debug overlay enabled', 'ok'); }, 800);
+  }
+})();
+// Long-press logo (2s) to toggle — works on touch devices
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    var logo = document.querySelector('.bcf-logo-frame') || document.getElementById('bcfHeaderLogo');
+    if(!logo) return;
+    var pressTimer = null;
+    var startPress = function(){
+      pressTimer = setTimeout(function(){
+        window.bcfToggleDebug();
+      }, 2000);
+    };
+    var cancelPress = function(){
+      if(pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
+    };
+    logo.addEventListener('touchstart', startPress, {passive:true});
+    logo.addEventListener('touchend', cancelPress);
+    logo.addEventListener('touchcancel', cancelPress);
+    logo.addEventListener('mousedown', startPress);
+    logo.addEventListener('mouseup', cancelPress);
+    logo.addEventListener('mouseleave', cancelPress);
+  }, 1000);
+});
+
 function setView(v){
+  bcfDebugLog('setView(' + v + ')');
+  var t0 = performance.now();
+
   activeView=v;
 
   // Cancel any pending debounced filter calls — stops stale renders
   // hitting DOM elements that no longer exist after view change.
   // (Was the root cause of "click ไม่ตอบสนอง" on iPad after using filter.)
   bcfCancelAllDebounced();
+  bcfDebugLog('  cancelled debounced');
 
   document.querySelectorAll('.view-btn').forEach((b,i)=>b.classList.toggle('active',['dashboard','map','summary','search','history','transfer','txlog','move','flashcard','stockreport','customers','products','invoice','invoicehist','salesreport'][i]===v));
 
@@ -2404,15 +2500,23 @@ function setView(v){
   var mainContent = document.getElementById('mainContent');
   if(mainContent){
     mainContent.innerHTML = '<div style="text-align:center;padding:40px;color:#94a0b5;font-size:13px">กำลังโหลด...</div>';
+    bcfDebugLog('  cleared mainContent');
+  } else {
+    bcfDebugLog('  mainContent NOT FOUND', 'err');
   }
 
   // Defer heavy render to next animation frame so the DOM clear paints first.
   // Without this, iPad Safari shows stale content until render finishes.
   // Wrap renderView in try/catch so a render error doesn't lock the UI.
   requestAnimationFrame(function(){
+    bcfDebugLog('  RAF fired, calling renderView');
+    var t1 = performance.now();
     try{
       renderView();
+      var t2 = performance.now();
+      bcfDebugLog('  renderView OK ('+Math.round(t2-t1)+'ms)', 'ok');
     }catch(err){
+      bcfDebugLog('  renderView ERR: '+(err.message||err), 'err');
       console.error('[setView] render error:', err);
       if(mainContent){
         mainContent.innerHTML = '<div style="padding:40px;color:#c0392b;text-align:center">'
@@ -2422,6 +2526,7 @@ function setView(v){
           + '<button class="btn" onclick="location.reload()" style="margin-top:16px">โหลดใหม่</button></div>';
       }
     }
+    bcfDebugLog('  total: '+Math.round(performance.now()-t0)+'ms', 'ok');
     // Premium UX — re-trigger fade-in animation on the main content area
     // Skip animation for heavy views OR on mobile/iPad (≤1279px) — large tables freeze Safari
     var heavyViews = ['summary','search','history','txlog','flashcard','stockreport','salesreport','invoicehist'];
