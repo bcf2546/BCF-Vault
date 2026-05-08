@@ -2385,9 +2385,22 @@ function bcfCancelAllDebounced(){
 }
 
 function setRoom(r){
+  bcfDebugLog('setRoom('+r+')');
   activeRoom=r;
-  document.querySelectorAll('.room-btn').forEach((b,i)=>b.classList.toggle('active',['room1','room2f1','room2f2','room5'][i]===r));
-  if(activeView!=='map')setView('map');else renderView();
+  try{
+    document.querySelectorAll('.room-btn').forEach((b,i)=>b.classList.toggle('active',['room1','room2f1','room2f2','room5'][i]===r));
+    bcfDebugLog('  room-btn class toggled');
+  }catch(err){
+    bcfDebugLog('  toggle ERR: '+err.message, 'err');
+  }
+  if(activeView!=='map'){
+    bcfDebugLog('  → setView(map)');
+    setView('map');
+  } else {
+    bcfDebugLog('  → renderView');
+    try{ renderView(); bcfDebugLog('  renderView OK', 'ok'); }
+    catch(err){ bcfDebugLog('  renderView ERR: '+err.message, 'err'); }
+  }
 }
 // ── ON-SCREEN DEBUG OVERLAY (for iPad/iPhone where there's no console) ── Tap-and-hold the BCF logo for 2 seconds to enable.
 // Shows last 25 events in a green floating box top-right.
@@ -2416,6 +2429,20 @@ window.addEventListener('error', function(e){
 });
 window.addEventListener('unhandledrejection', function(e){
   bcfDebugLog('PROMISE ERR: '+(e.reason && e.reason.message || e.reason || '?'), 'err');
+});
+
+// Safe click tracker (won't cause render loops because bcfDebugLog is RAF-batched)
+// Uses BUBBLE phase (not capture) — runs after all onclick handlers, so we
+// see whether they fired or not.
+document.addEventListener('click', function(e){
+  if(!window._bcfDebugEnabled) return;
+  var btn = e.target.closest('button, [onclick], .view-btn, .room-btn');
+  if(!btn) return; // ignore non-button clicks
+  var label = btn.className && typeof btn.className === 'string'
+    ? btn.className.split(' ')[0]
+    : btn.tagName.toLowerCase();
+  var text = (btn.textContent||'').trim().substring(0,15);
+  bcfDebugLog('TAP: '+label+' "'+text+'"');
 });
 function bcfDebugRender(){
   var el = document.getElementById('bcfDebugOverlay');
