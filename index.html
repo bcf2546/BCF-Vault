@@ -198,7 +198,19 @@ table{border-collapse:collapse}
 .cell-name .clickable{cursor:pointer}
 .cell-name .clickable:hover{text-decoration:underline}
 .cell-lot{font-size:13px;opacity:0.9}
-.cell-pos{font-size:11px;color:var(--gray-400);font-weight:600;margin-bottom:3px}
+.cell-pos{font-size:11px;color:var(--gray-400);font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+.cell-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:16px;height:16px;padding:0 5px;
+  background:var(--primary-light,#e6f0ff);
+  color:var(--primary,#0052cc);
+  font-size:9px;font-weight:700;
+  border-radius:8px;line-height:1;
+  letter-spacing:0;
+}
+.cell-count.emergency{
+  background:#fff3e0;color:#c05800;
+}
 .walkway-label{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px;opacity:0.6}
 .walkway-icon{font-size:18px}
 .walkway-text{font-size:11px;font-weight:600;color:#9f1239}
@@ -1998,6 +2010,9 @@ button,.btn,.view-btn,.room-btn,a,
   text-transform:uppercase;
   letter-spacing:0.05em;
   display:flex;align-items:center;gap:5px;
+  flex:1;min-width:0;
+  word-break:break-word;
+  line-height:1.25;
 }
 .bcf-tmp-chip-label .ico{font-size:13px}
 .bcf-tmp-chip-remove{
@@ -2050,7 +2065,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.11</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.12</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -2146,10 +2161,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.23";
-const BCF_BUILD = "20260526-1530";
+const BCF_VERSION = "18.24";
+const BCF_BUILD = "20260526-1700";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.11";
+const BCF_EDITION = "2026.12";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -2172,7 +2187,7 @@ const COLORS=[
 const SHELF_YEARS=2; // อายุสินค้า 2 ปี
 const WARN_DAYS=180; // เตือนก่อนหมดอายุ 6 เดือน
 
-let data={},history=[],activeRoom='room1',activeView='map',editCell=null,modalItems=[],modalNote='';
+let data={},history=[],activeRoom='room1',activeView='map',editCell=null,modalItems=[],modalNote='',modalLabel='';
 var hasReceivedCloudData = false; // true once pullFromSheets succeeded at least once
 
 try{data=JSON.parse(localStorage.getItem('crm_v6')||'{}');}catch(e){data={};}
@@ -2557,7 +2572,8 @@ function removeTmpCell(roomId, n){
     if(!confirm('ช่องชั่วคราว #'+n+' ยังมีของอยู่ — ลบช่องนี้แล้วของจะหายไปด้วย ยืนยันลบ?')) return;
   }
   // Log to history before mutating
-  addHist('ลบ', roomId, TMP_COL, n, 'ลบช่องชั่วคราว TMP'+n + (hasData ? ' (มีของ '+d.items.length+' รายการ)' : ' (ว่าง)'));
+  var _removedLbl = (d && d.label) ? (' "'+d.label+'"') : '';
+  addHist('ลบ', roomId, TMP_COL, n, 'ลบช่องชั่วคราว TMP'+n + _removedLbl + (hasData ? ' (มีของ '+d.items.length+' รายการ)' : ' (ว่าง)'));
   var dirtyKeys = [];
   // Delete data + tombstone
   if(data[k]){
@@ -2609,6 +2625,21 @@ function cellLocationLabel(col, row){
 // Short version for tight UI
 function cellShortLabel(col, row){
   if(col === TMP_COL) return 'TMP'+row;
+  return col + row;
+}
+// Get the current user-set label of a TMP cell (empty string if none)
+function tmpLabelOf(roomId, row){
+  var d = data[ck(roomId, TMP_COL, row)];
+  return d && d.label ? String(d.label).trim().slice(0,15) : '';
+}
+// Display label: "TMP1" or "TMP1 - หน้าประตู"
+function tmpDisplayLabel(roomId, row){
+  var lbl = tmpLabelOf(roomId, row);
+  return 'TMP' + row + (lbl ? (' - ' + lbl) : '');
+}
+// Verbose cell label for tx descriptions — includes user label for TMP cells
+function cellFullLabel(roomId, col, row){
+  if(col === TMP_COL) return tmpDisplayLabel(roomId, row);
   return col + row;
 }
 // Reconcile counts with actual data on startup
@@ -3440,7 +3471,7 @@ function renderOverflowZone(roomId){
 
     return '<div class="'+classes.join(' ')+'" data-items="'+esc(JSON.stringify([...new Set(items.map(function(it){return it.name;}))]))+'" onclick="openCell(\''+TMP_COL+'\','+tc.row+')">'
       + '<div class="bcf-tmp-chip-header">'
-      + '<span class="bcf-tmp-chip-label"><span class="ico">📦</span>TMP'+tc.row+'</span>'
+      + '<span class="bcf-tmp-chip-label"><span class="ico">📦</span>'+esc(tmpDisplayLabel(roomId, tc.row))+'</span>'
       + '<button class="bcf-tmp-chip-remove" onclick="event.stopPropagation();removeTmpCell(\''+roomId+'\','+tc.row+')" title="ลบช่องนี้">✕</button>'
       + '</div>'
       + '<div class="bcf-tmp-chip-body">' + bodyHtml + '</div>'
@@ -3468,12 +3499,34 @@ function openCell(col,row){ if(!checkLock()) return;
     return it;
   }):[{name:'',color:'#1a1a1a',lotRows:[{lot:'',qtys:[{q:'',u:''}]}]}];
   modalNote=d.note||'';
-  var titleText = (col === TMP_COL)
-    ? ('ช่องชั่วคราว #' + row + ' — ' + ROOMS[activeRoom].name)
-    : ('ช่อง ' + col + row + ' — ' + ROOMS[activeRoom].name);
+  modalLabel = (col === TMP_COL) ? (d.label || '') : '';
+  var titleText;
+  if(col === TMP_COL){
+    var labelSuffix = modalLabel ? (' - ' + modalLabel) : '';
+    titleText = 'ช่อง TMP' + row + labelSuffix + ' — ' + ROOMS[activeRoom].name;
+  } else {
+    titleText = 'ช่อง ' + col + row + ' — ' + ROOMS[activeRoom].name;
+  }
   document.getElementById('modalTitle').textContent = titleText;
   renderModalBody();
   document.getElementById('modalBg').classList.add('open');
+}
+
+// Live-update the modal title when the TMP label input changes
+function updateModalTitleLive(){
+  if(!editCell || editCell.col !== TMP_COL) return;
+  var titleEl = document.getElementById('modalTitle');
+  if(!titleEl) return;
+  var labelSuffix = modalLabel ? (' - ' + modalLabel) : '';
+  titleEl.textContent = 'ช่อง TMP' + editCell.row + labelSuffix + ' — ' + ROOMS[editCell.room].name;
+}
+// Handler bound to TMP label input's oninput
+function onTmpLabelInput(el){
+  // Strip control chars + cap at 15 chars
+  var v = String(el.value||'').replace(/[\u0000-\u001f]/g,'').slice(0,15);
+  if(v !== el.value) el.value = v;
+  modalLabel = v;
+  updateModalTitleLive();
 }
 
 function colorSwatchesHtml(idx,sel){
@@ -3655,7 +3708,18 @@ function setItemLotQtyUnitText(idx, li, qi, val){
 
 function renderModalBody(){
   const ww = isWalkway(editCell.room, editCell.col);
+  const isTmp = editCell.col === TMP_COL;
   let h = ww ? '<div class="warn-banner"><div class="warn-icon">⚠️</div><div class="warn-text"><strong>ช่องนี้คือทางเดิน</strong><br>ใช้วางของได้เฉพาะเมื่อพื้นที่ปกติเต็มเท่านั้น</div></div>' : '';
+  // TMP label input (only for TMP cells)
+  if(isTmp){
+    h += '<div style="background:linear-gradient(180deg,#fffaf0 0%,#fef6e4 100%);border:1px solid rgba(201,169,97,0.4);border-radius:8px;padding:10px 14px;margin-bottom:12px">'
+      + '<label style="display:block;font-size:11px;font-weight:700;color:#7a5f1f;letter-spacing:0.03em;margin-bottom:5px">📦 ตั้งชื่อช่องชั่วคราว (ไม่ต้องตั้งก็ได้)</label>'
+      + '<input type="text" id="tmpLabelInput" value="'+esc(modalLabel||'')+'" maxlength="15" placeholder="เช่น หน้าประตู, มุมขวา, กล่องใหม่" '
+      + 'oninput="onTmpLabelInput(this)" '
+      + 'style="width:100%;border:1px solid rgba(201,169,97,0.5);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;outline:none;background:#fff">'
+      + '<div style="font-size:10.5px;color:#9e7e3b;margin-top:3px">สูงสุด 15 ตัวอักษร — จะแสดงเป็น "TMP'+editCell.row+' - &lt;ชื่อ&gt;" ทุกที่</div>'
+      + '</div>';
+  }
 
   modalItems.forEach(function(it, i){
     // LOT rows HTML
@@ -3772,7 +3836,9 @@ function saveCell(){
     });
   });
   const valid = expanded;
-  if(!valid.length&&!modalNote.trim()){clearCell();return;}
+  // For TMP cells: if user has set a label, keep the slot even with no items/note
+  var _isTmpHasLabel = editCell.col === TMP_COL && String(modalLabel||'').trim();
+  if(!valid.length && !modalNote.trim() && !_isTmpHasLabel){ clearCell(); return; }
   
   // Warn if any qty without unit
   var missingUnit = [];
@@ -3788,7 +3854,11 @@ function saveCell(){
   }
   
   const k=ck(editCell.room,editCell.col,editCell.row);
-  data[k]={items:valid,note:modalNote.trim(),_mt:Date.now()}; // _mt = modified time (ms)
+  const _isTmpSave = editCell.col === TMP_COL;
+  const _trimmedLabel = _isTmpSave ? String(modalLabel||'').trim().slice(0,15) : '';
+  var _cellRecord = {items:valid,note:modalNote.trim(),_mt:Date.now()};
+  if(_isTmpSave && _trimmedLabel) _cellRecord.label = _trimmedLabel;
+  data[k] = _cellRecord; // _mt = modified time (ms)
   // User is writing to this cell — remove any old tombstone
   if(deletedCells[k]){
     delete deletedCells[k];
@@ -3817,7 +3887,10 @@ function clearCell(){
   addHist('ลบ',editCell.room,editCell.col,editCell.row,'ล้างช่อง '+cellShortLabel(editCell.col,editCell.row));
   // For TMP cells: clear items but preserve the slot (so other devices still see this slot exists)
   if(editCell.col === TMP_COL){
-    data[k] = {items:[], note:'', _mt:Date.now()};
+    var _existingLabel = data[k] && data[k].label ? data[k].label : '';
+    var _newRec = {items:[], note:'', _mt:Date.now()};
+    if(_existingLabel) _newRec.label = _existingLabel;
+    data[k] = _newRec;
     pendingPatch[k] = data[k];
   } else {
     delete data[k];
@@ -4059,7 +4132,7 @@ function applyFilter(){
     const expStr=it.expDate?it.expDate.toLocaleDateString('en-GB'):'—';
     tbl+=`<tr class="${rowCls}">
       <td style="font-size:12px">${esc(ROOMS[it.room]?.name||it.room)}</td>
-      <td><span class="badge${badgeCls}" title="${isTmp?'ช่องชั่วคราว':''}">${cellLabel}</span></td>
+      <td><span class="badge${badgeCls}" title="${isTmp ? esc(tmpDisplayLabel(it.room, it.row)) : ''}">${cellLabel}</span></td>
       <td style="color:${esc(it.color||'#1a1a1a')};font-weight:600">${esc(it.name)}</td>
       <td style="font-size:12px;font-weight:600">${esc(formatLotDisplay(it.lot)||'—')}</td>
       <td style="font-size:12px;color:${st==='expired'?'#c0392b':st==='expiring'?'#c05800':'#1a1a1a'}">${expStr}</td>
@@ -4245,7 +4318,7 @@ function applySearchFilter(){
     var _cellLabel = _isTmp ? ('📦TMP'+it.row) : (esc(it.col)+it.row);
     html += '<tr style="background:'+rowBg+'">'
       + '<td style="font-size:12px">'+esc(ROOMS[it.room]?.name||it.room)+'</td>'
-      + '<td><span class="badge'+_badgeCls+'" title="'+(_isTmp?'ช่องชั่วคราว':'')+'">'+_cellLabel+'</span></td>'
+      + '<td><span class="badge'+_badgeCls+'" title="'+(_isTmp?esc(tmpDisplayLabel(it.room,it.row)):'')+'">'+_cellLabel+'</span></td>'
       + '<td style="color:'+esc(it.color||'#1a1a1a')+';font-weight:600">'+esc(it.name)+'</td>'
       + '<td style="font-size:12px;font-weight:600">'+esc(formatLotDisplay(it.lot)||'—')+'</td>'
       + '<td style="font-size:12px;color:'+(st==='expired'?'#c0392b':st==='expiring'?'#c05800':'#1a1a1a')+'">'+expStr+'</td>'
@@ -4297,7 +4370,7 @@ function exportSearchPDF(){
     return '<tr style="background:'+bg+'">'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px">'+(idx+1)+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px">'+(ROOMS[it.room]?.name||it.room)+'</td>'
-      + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px;font-weight:600"'+(_isTmp?' title="ช่องชั่วคราว"':'')+'>'+_cellLabel+'</td>'
+      + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px;font-weight:600"'+(_isTmp?' title="'+esc(tmpDisplayLabel(it.room,it.row))+'"':'')+'>'+_cellLabel+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-weight:600;color:'+(it.color||'#1a1a1a')+'">'+it.name+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px;font-weight:600">'+(formatLotDisplay(it.lot)||'—')+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px">'+expStr+'</td>'
@@ -4499,7 +4572,8 @@ function buildHistList(){
     // Who made the change (user who logged in at the time)
     var byStr = hh.by ? '<div style="font-size:10px;color:#6366f1;margin-top:3px;font-weight:600">👤 '+esc(hh.by)+'</div>' : '';
     var _isTmpHh = hh.col === TMP_COL;
-    var _cellLabelHh = _isTmpHh ? ('📦TMP'+(hh.row||'')) : (esc(hh.col||'')+(hh.row?hh.row:''));
+    var _hhLabel = _isTmpHh && hh.room && hh.row ? tmpLabelOf(hh.room, hh.row) : '';
+    var _cellLabelHh = _isTmpHh ? ('📦TMP'+(hh.row||'')+(_hhLabel?' - '+esc(_hhLabel):'')) : (esc(hh.col||'')+(hh.row?hh.row:''));
     html += '<div style="background:#fff;border:1px solid #e4e7ec;border-radius:7px;padding:9px 13px;display:flex;gap:10px;align-items:flex-start">'
       + '<span style="background:'+tBg+';color:'+tColor+';font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;margin-top:1px">'+esc(hh.type||'แก้ไข')+'</span>'
       + '<div style="flex:1;min-width:0">'
@@ -4745,7 +4819,7 @@ function exportPDF(){
         const _cellLabel=_isTmp?('📦TMP'+it.row):(esc(it.col)+it.row);
         return `<tr style="background:${bg}">
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px">${esc(ROOMS[it.room]?.name||it.room)}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px;font-weight:700"${_isTmp?' title="ช่องชั่วคราว"':''}>${_cellLabel}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px;font-weight:700"${_isTmp?' title="'+esc(tmpDisplayLabel(it.room,it.row))+'"':''}>${_cellLabel}</td>
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-weight:600;font-size:11px">${esc(it.name)}</td>
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px;font-weight:600">${esc(formatLotDisplay(it.lot)||'—')}</td>
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px">${expStr}</td>
@@ -4916,7 +4990,7 @@ function _doPrintMap(includeTmp){
           }
         }
         return '<td style="border:1.5px solid #c9a961;padding:6px 8px;background:#fffdf6;vertical-align:top;width:'+tmpCardWidth+'">'
-          + '<div style="font-size:10px;color:#7a5f1f;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;border-bottom:1px solid rgba(201,169,97,0.3);padding-bottom:2px;margin-bottom:3px">📦 TMP'+tc.row+'</div>'
+          + '<div style="font-size:10px;color:#7a5f1f;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;border-bottom:1px solid rgba(201,169,97,0.3);padding-bottom:2px;margin-bottom:3px">📦 '+esc(tmpDisplayLabel(activeRoom, tc.row))+'</div>'
           + bodyInner
           + '</td>';
       });
@@ -5051,7 +5125,7 @@ function refreshTxInCells(){
     tmpCells.forEach(function(tc){
       var d = data[tc.key];
       var hasData = d && d.items && d.items.length > 0;
-      var label = '📦 TMP'+tc.row + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+      var label = '📦 '+tmpDisplayLabel(roomKey,tc.row) + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
       opts.push('<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>');
     });
   }
@@ -5399,7 +5473,7 @@ function refreshTxOutItems(){
   if(!sel) return;
   var items=getRoomItems(roomKey);
   sel.innerHTML='<option value="">-- เลือกสินค้า --</option>'+
-    items.map(function(it,i){ var _loc = it.col===TMP_COL?('📦TMP'+it.row):(it.col+it.row); return '<option value="'+i+'">'+it.name+' ('+_loc+') '+(it.qtyStr?'| '+it.qtyStr:'')+'</option>'; }).join('');
+    items.map(function(it,i){ var _loc = it.col===TMP_COL?('📦'+tmpDisplayLabel(it.room||roomKey,it.row)):(it.col+it.row); return '<option value="'+i+'">'+it.name+' ('+_loc+') '+(it.qtyStr?'| '+it.qtyStr:'')+'</option>'; }).join('');
   sel._items=items;
   updateTxOutBalance();
 }
@@ -5475,7 +5549,10 @@ async function submitTxOut(){
       if(!cellData.items.length){
         if(it.col === TMP_COL){
           // TMP slot: keep empty record so other devices still see this slot
-          data[it.cellKey] = {items:[], note:'', _mt:Date.now()};
+          var _txOutLbl = data[it.cellKey] && data[it.cellKey].label ? data[it.cellKey].label : '';
+          var _txOutRec = {items:[], note:'', _mt:Date.now()};
+          if(_txOutLbl) _txOutRec.label = _txOutLbl;
+          data[it.cellKey] = _txOutRec;
         } else {
           delete data[it.cellKey];
           // Tombstone so other devices don't resurrect this cell
@@ -5877,7 +5954,7 @@ function getCellOptions(roomKey, includeEmpty){
     var d = data[tc.key];
     var hasData = d && d.items && d.items.length > 0;
     if(!includeEmpty && !hasData) return;
-    var label = '📦 TMP'+tc.row + (hasData ? ' ('+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+    var label = '📦 '+tmpDisplayLabel(roomKey,tc.row) + (hasData ? ' ('+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
     tmpOpts += '<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>';
   });
   if(tmpOpts){
@@ -5995,7 +6072,7 @@ function refreshSwapCells(side){
     tmpCells.forEach(function(tc){
       var d = data[tc.key];
       var hasData = d && d.items && d.items.length > 0;
-      var label = '📦 TMP'+tc.row + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+      var label = '📦 '+tmpDisplayLabel(roomKey,tc.row) + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
       opts += '<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>';
     });
   }
@@ -6043,11 +6120,23 @@ function submitSwap(){
 
   // Helper: empty-out cell respecting TMP preservation
   function _setOrEmpty(key, col, srcData){
+    // Preserve target slot's own label (label belongs to slot, not items)
+    var existingLabel = data[key] && data[key].label ? data[key].label : '';
     if(srcData){
-      data[key] = srcData;
+      // Copy items+note from src, but keep this slot's own label
+      var newRec = Object.assign({}, srcData);
+      if(col === TMP_COL){
+        if(existingLabel) newRec.label = existingLabel;
+        else delete newRec.label;
+      } else {
+        delete newRec.label; // non-TMP cells don't carry labels
+      }
+      data[key] = newRec;
     } else if(col === TMP_COL){
-      // TMP slot: keep slot record so other devices see it; just empty items
-      data[key] = {items:[], note:'', _mt:Date.now()};
+      // TMP slot: keep slot record so other devices see it; just empty items, keep label
+      var emptyRec = {items:[], note:'', _mt:Date.now()};
+      if(existingLabel) emptyRec.label = existingLabel;
+      data[key] = emptyRec;
     } else {
       delete data[key];
       deletedCells[key] = Date.now();
@@ -6068,16 +6157,16 @@ function submitSwap(){
 
   txList.unshift({
     type:'ย้าย', room:fromRoom, roomName:ROOMS[fromRoom]?.name||fromRoom,
-    itemName:'สลับช่อง '+cellShortLabel(fromCol,fromRow)+' ↔ '+cellShortLabel(toCol,toRow),
+    itemName:'สลับช่อง '+cellFullLabel(fromRoom,fromCol,fromRow)+' ↔ '+cellFullLabel(toRoom,toCol,toRow),
     lot:'', cellPos:cellShortLabel(fromCol,fromRow),
     qty:'', unit:'',
-    customer:ROOMS[toRoom]?.name+' ช่อง '+cellShortLabel(toCol,toRow),
+    customer:ROOMS[toRoom]?.name+' ช่อง '+cellFullLabel(toRoom,toCol,toRow),
     by:by, date:date, note:'',
     remaining:'', ts:new Date().toISOString()
   });
 
   save([fromKey, toKey]); saveTx();
-  alert('สลับช่องเรียบร้อยแล้ว! '+fromCol+fromRow+' ⇄ '+toCol+toRow);
+  alert('สลับช่องเรียบร้อยแล้ว! '+cellFullLabel(fromRoom,fromCol,fromRow)+' ⇄ '+cellFullLabel(toRoom,toCol,toRow));
   renderMove();
 }
 function submitMove(){
@@ -6161,7 +6250,10 @@ function submitMove(){
   if(!data[fromKey].items.length){
     if(fromCol === TMP_COL){
       // TMP slot: keep empty record so other devices still see this slot
-      data[fromKey] = {items:[], note:'', _mt:Date.now()};
+      var _movedLbl = data[fromKey] && data[fromKey].label ? data[fromKey].label : '';
+      var _movedRec = {items:[], note:'', _mt:Date.now()};
+      if(_movedLbl) _movedRec.label = _movedLbl;
+      data[fromKey] = _movedRec;
     } else {
       delete data[fromKey];
       // Tombstone so other devices don't resurrect the emptied cell
@@ -6174,13 +6266,13 @@ function submitMove(){
     type:'ย้าย', room:fromRoom, roomName:ROOMS[fromRoom]?.name||fromRoom,
     itemName:itemName, lot:'', cellPos:cellShortLabel(fromCol,fromRow),
     qty:movedSummary.join(' | '), unit:'',
-    customer:'ย้ายไป: '+(ROOMS[toRoom]?.name||toRoom)+' ช่อง '+cellShortLabel(toCol,toRow),
+    customer:'ย้ายไป: '+(ROOMS[toRoom]?.name||toRoom)+' ช่อง '+cellFullLabel(toRoom,toCol,toRow),
     by:by, date:date, note:note,
     remaining:'', ts:new Date().toISOString()
   });
 
   save(); saveTx();
-  alert('ย้ายของเรียบร้อย: ' + itemName + ' จาก '+fromCol+fromRow+' ไป '+toCol+toRow);
+  alert('ย้ายของเรียบร้อย: ' + itemName + ' จาก '+cellFullLabel(fromRoom,fromCol,fromRow)+' ไป '+cellFullLabel(toRoom,toCol,toRow));
   renderMove();
 }
 
