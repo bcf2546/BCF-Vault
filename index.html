@@ -1979,6 +1979,15 @@ button,.btn,.view-btn,.room-btn,a,
   border-color:#c0392b;
   background:linear-gradient(180deg,#fff0f0 0%,#fff 100%);
 }
+.bcf-tmp-chip.highlighted{
+  border:2px solid #c9a961!important;
+  box-shadow:0 0 0 3px rgba(201,169,97,0.25)!important;
+  z-index:3;
+}
+.bcf-tmp-chip.dimmed{
+  opacity:0.18;
+  pointer-events:none;
+}
 .bcf-tmp-chip-header{
   display:flex;align-items:center;justify-content:space-between;
   gap:6px;
@@ -2524,6 +2533,19 @@ function addTmpCell(roomId){
   if(!tmpCellCounts.hasOwnProperty(roomId)) tmpCellCounts[roomId] = 0;
   tmpCellCounts[roomId] += 1;
   _saveTmpCounts();
+  // Create empty data slot so the cell exists across cloud sync (other devices see it)
+  var n = tmpCellCounts[roomId];
+  var k = ck(roomId, TMP_COL, n);
+  if(!data[k]){
+    data[k] = {items:[], note:'', _mt:Date.now()};
+    // Clear tombstone if existed
+    if(deletedCells[k]){
+      delete deletedCells[k];
+      try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+    }
+    addHist('เพิ่ม', roomId, TMP_COL, n, 'เพิ่มช่องชั่วคราว TMP'+n);
+    save([k]);
+  }
   if(activeView==='map') renderMap();
 }
 function removeTmpCell(roomId, n){
@@ -2534,10 +2556,20 @@ function removeTmpCell(roomId, n){
   if(hasData){
     if(!confirm('ช่องชั่วคราว #'+n+' ยังมีของอยู่ — ลบช่องนี้แล้วของจะหายไปด้วย ยืนยันลบ?')) return;
   }
+  // Log to history before mutating
+  addHist('ลบ', roomId, TMP_COL, n, 'ลบช่องชั่วคราว TMP'+n + (hasData ? ' (มีของ '+d.items.length+' รายการ)' : ' (ว่าง)'));
+  var dirtyKeys = [];
   // Delete data + tombstone
   if(data[k]){
     delete data[k];
     deletedCells[k] = Date.now();
+    pendingPatch[k] = null;
+    dirtyKeys.push(k);
+  } else {
+    // Even if data didn't exist (was empty slot), we should not push a stale row
+    deletedCells[k] = Date.now();
+    pendingPatch[k] = null;
+    dirtyKeys.push(k);
   }
   // Shift higher TMP cells down (TMP3 -> TMP2 ถ้าลบ TMP2)
   var count = getTmpCount(roomId);
@@ -2546,14 +2578,18 @@ function removeTmpCell(roomId, n){
     var toK   = ck(roomId, TMP_COL, i);
     if(data[fromK]){
       data[toK] = data[fromK];
+      data[toK]._mt = Date.now();
       delete data[fromK];
+      pendingPatch[toK] = data[toK]; // mark new slot as dirty (write)
+      pendingPatch[fromK] = null;    // mark old slot as deleted
       deletedCells[fromK] = Date.now();
+      dirtyKeys.push(toK, fromK);
     }
   }
   tmpCellCounts[roomId] = Math.max(0, count - 1);
   _saveTmpCounts();
   try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
-  save();
+  save(dirtyKeys);
   if(activeView==='map') renderMap();
 }
 // Return list of TMP cells for a room: [{room,col:'TMP',row:1,key,data}, ...]
@@ -3090,7 +3126,7 @@ function clearHighlight(){
 
 function applyHighlight(){
   if(!highlightName) return;
-  var cells = document.querySelectorAll('.cell[data-items]');
+  var cells = document.querySelectorAll('.cell[data-items], .bcf-tmp-chip[data-items]');
   var matchCount = 0;
   cells.forEach(function(c){
     var itemNames = JSON.parse(c.getAttribute('data-items')||'[]');
@@ -3402,7 +3438,7 @@ function renderOverflowZone(roomId){
       if(pGrpOrder.length > 3) bodyHtml += '<div class="bcf-tmp-chip-lot" style="color:#999">+ '+(pGrpOrder.length-3)+' รายการ</div>';
     }
 
-    return '<div class="'+classes.join(' ')+'" onclick="openCell(\''+TMP_COL+'\','+tc.row+')">'
+    return '<div class="'+classes.join(' ')+'" data-items="'+esc(JSON.stringify([...new Set(items.map(function(it){return it.name;}))]))+'" onclick="openCell(\''+TMP_COL+'\','+tc.row+')">'
       + '<div class="bcf-tmp-chip-header">'
       + '<span class="bcf-tmp-chip-label"><span class="ico">📦</span>TMP'+tc.row+'</span>'
       + '<button class="bcf-tmp-chip-remove" onclick="event.stopPropagation();removeTmpCell(\''+roomId+'\','+tc.row+')" title="ลบช่องนี้">✕</button>'
@@ -3759,7 +3795,9 @@ function saveCell(){
     try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
   }
   const ww=isWalkway(editCell.room,editCell.col);
-  addHist('บันทึก',editCell.room,editCell.col,editCell.row,(ww?'[ชั่วคราว] ':'')+valid.map(i=>i.name+(i.lot?' LOT:'+i.lot:'')).join(', '));
+  const isTmp = editCell.col === TMP_COL;
+  const histPrefix = isTmp ? '[ช่องชั่วคราว] ' : (ww ? '[ชั่วคราว] ' : '');
+  addHist('บันทึก',editCell.room,editCell.col,editCell.row, histPrefix + valid.map(i=>i.name+(i.lot?' LOT:'+i.lot:'')).join(', '));
   save([k]);                // persist with specific dirty key (for patch push)
   closeModal();
   renderView();
@@ -3769,14 +3807,25 @@ function saveCell(){
   }
 }
 function clearCell(){
-  if(!confirm('ยืนยันล้างข้อมูลทั้งหมดในช่องนี้?'))return;
+  // For empty TMP cells: no need to confirm (nothing to lose)
+  var k0 = ck(editCell.room,editCell.col,editCell.row);
+  var isEmptyTmp = (editCell.col === TMP_COL) && (!data[k0] || !data[k0].items || !data[k0].items.length) && !modalNote.trim();
+  if(!isEmptyTmp){
+    if(!confirm('ยืนยันล้างข้อมูลทั้งหมดในช่องนี้?'))return;
+  }
   const k=ck(editCell.room,editCell.col,editCell.row);
-  addHist('ลบ',editCell.room,editCell.col,editCell.row,'ล้างช่อง '+editCell.col+editCell.row);
-  delete data[k];
-  // Tombstone so other devices don't resurrect the cell when they next push
-  deletedCells[k] = Date.now();
-  pendingPatch[k] = null; // explicitly mark as deleted in patch
-  try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+  addHist('ลบ',editCell.room,editCell.col,editCell.row,'ล้างช่อง '+cellShortLabel(editCell.col,editCell.row));
+  // For TMP cells: clear items but preserve the slot (so other devices still see this slot exists)
+  if(editCell.col === TMP_COL){
+    data[k] = {items:[], note:'', _mt:Date.now()};
+    pendingPatch[k] = data[k];
+  } else {
+    delete data[k];
+    // Tombstone so other devices don't resurrect the cell when they next push
+    deletedCells[k] = Date.now();
+    pendingPatch[k] = null; // explicitly mark as deleted in patch
+    try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+  }
   closeModal();
   renderView();
   save([k]); // pass dirty key for patch push
@@ -4723,18 +4772,15 @@ function exportPDF(){
 
 // ── PRINT MAP ──
 function printMap(){
-  // ── ถ้ามีช่องชั่วคราว ถามว่าจะรวมในใบพิมพ์ด้วยหรือไม่ ──
+  // ── ถ้ามีช่องชั่วคราวที่มีของ ถามว่าจะรวมในใบพิมพ์ด้วยหรือไม่ ──
   var tmpCells = getTmpCells(activeRoom);
   var hasTmpWithData = tmpCells.some(function(tc){
     var d = data[tc.key];
     return d && d.items && d.items.length > 0;
   });
   var includeTmp = false;
-  if(tmpCells.length > 0){
-    var msg = hasTmpWithData
-      ? 'ห้องนี้มีช่องชั่วคราว '+tmpCells.length+' ช่อง (มีของบางช่อง)\n\nต้องการพิมพ์ช่องชั่วคราวในใบพิมพ์ด้วยหรือไม่?\n\n• กด "ตกลง" = พิมพ์ผังหลัก + ช่องชั่วคราว\n• กด "ยกเลิก" = พิมพ์เฉพาะผังหลัก'
-      : 'ห้องนี้มีช่องชั่วคราว '+tmpCells.length+' ช่อง (ทั้งหมดยังว่าง)\n\nต้องการพิมพ์ช่องชั่วคราวด้วยหรือไม่?';
-    includeTmp = confirm(msg);
+  if(hasTmpWithData){
+    includeTmp = confirm('ห้องนี้มีช่องชั่วคราวที่มีของอยู่\n\nต้องการพิมพ์ช่องชั่วคราวในใบพิมพ์ด้วยหรือไม่?\n\n• กด "ตกลง" = พิมพ์ผังหลัก + ช่องชั่วคราว (หน้าใหม่)\n• กด "ยกเลิก" = พิมพ์เฉพาะผังหลัก');
   }
   _doPrintMap(includeTmp);
 }
@@ -4830,7 +4876,11 @@ function _doPrintMap(includeTmp){
 
   // ── Append TMP (overflow) page if requested ──
   if(includeTmp){
-    var tmpCellsAll = getTmpCells(activeRoom);
+    // Only include TMP cells that have data
+    var tmpCellsAll = getTmpCells(activeRoom).filter(function(tc){
+      var d = data[tc.key];
+      return d && d.items && d.items.length > 0;
+    });
     if(tmpCellsAll.length > 0){
       // Build TMP cards (4 columns on landscape, 3 on portrait)
       var tmpCols = pageOrientation === 'landscape' ? 4 : 3;
@@ -5423,10 +5473,15 @@ async function submitTxOut(){
     if(allZero){
       cellData.items=cellData.items.filter(function(ci){return !(ci.name===it.name&&ci.lot===it.lot);});
       if(!cellData.items.length){
-        delete data[it.cellKey];
-        // Tombstone so other devices don't resurrect this cell
-        deletedCells[it.cellKey] = Date.now();
-        try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+        if(it.col === TMP_COL){
+          // TMP slot: keep empty record so other devices still see this slot
+          data[it.cellKey] = {items:[], note:'', _mt:Date.now()};
+        } else {
+          delete data[it.cellKey];
+          // Tombstone so other devices don't resurrect this cell
+          deletedCells[it.cellKey] = Date.now();
+          try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+        }
       } else {
         cellData._mt = Date.now();
       }
@@ -5986,8 +6041,20 @@ function submitSwap(){
   const fromData = data[fromKey] ? JSON.parse(JSON.stringify(data[fromKey])) : null;
   const toData   = data[toKey]   ? JSON.parse(JSON.stringify(data[toKey]))   : null;
 
-  if(toData)   data[fromKey] = toData;   else { delete data[fromKey]; deletedCells[fromKey] = Date.now(); }
-  if(fromData) data[toKey]   = fromData; else { delete data[toKey];   deletedCells[toKey]   = Date.now(); }
+  // Helper: empty-out cell respecting TMP preservation
+  function _setOrEmpty(key, col, srcData){
+    if(srcData){
+      data[key] = srcData;
+    } else if(col === TMP_COL){
+      // TMP slot: keep slot record so other devices see it; just empty items
+      data[key] = {items:[], note:'', _mt:Date.now()};
+    } else {
+      delete data[key];
+      deletedCells[key] = Date.now();
+    }
+  }
+  _setOrEmpty(fromKey, fromCol, toData);
+  _setOrEmpty(toKey, toCol, fromData);
   // Update modified time
   if(data[fromKey]) data[fromKey]._mt = Date.now();
   if(data[toKey])   data[toKey]._mt   = Date.now();
@@ -6092,10 +6159,15 @@ function submitMove(){
     return it.qtys ? qtys.length>0 : true;
   });
   if(!data[fromKey].items.length){
-    delete data[fromKey];
-    // Tombstone so other devices don't resurrect the emptied cell
-    deletedCells[fromKey] = Date.now();
-    try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+    if(fromCol === TMP_COL){
+      // TMP slot: keep empty record so other devices still see this slot
+      data[fromKey] = {items:[], note:'', _mt:Date.now()};
+    } else {
+      delete data[fromKey];
+      // Tombstone so other devices don't resurrect the emptied cell
+      deletedCells[fromKey] = Date.now();
+      try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+    }
   }
 
   txList.unshift({
