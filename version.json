@@ -1,7 +1,7 @@
 {
-  "edition": "2026.10",
-  "version": "18.22",
-  "build": "20260508-1640",
-  "buildTime": "2026-05-08T09:29:52.626480",
-  "notes": "Mobile smoothness — disable backdrop blur + view animation + faster sidebar + instant close"
+  "edition": "2026.11",
+  "version": "18.23",
+  "build": "20260526-1530",
+  "buildTime": "2026-05-26T15:30:00+07:00",
+  "notes": "ช่องชั่วคราว (Overflow Cells) — เพิ่ม-ลบช่อง TMP ใต้ผังหลักได้ทุกห้อง · ใช้ได้กับทุกฟังก์ชัน (รับ/เบิก/ย้าย/ค้นหา/ประวัติ) · พิมพ์ผังมี toggle เลือกว่าจะรวมช่องชั่วคราวหรือไม่"
 }

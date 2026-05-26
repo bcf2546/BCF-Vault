@@ -1883,6 +1883,151 @@ button,.btn,.view-btn,.room-btn,a,
   .bcf-pager-info{padding:0 6px!important;font-size:12px!important}
 }
 
+/* ════════════════════════════════════════════════════════════════
+   OVERFLOW ZONE — ช่องชั่วคราว (TMP cells)
+   ════════════════════════════════════════════════════════════════ */
+.bcf-overflow-zone{
+  margin-top:18px;
+  background:linear-gradient(180deg,#fffaf0 0%,#fef6e4 100%);
+  border:1px solid rgba(201,169,97,0.35);
+  border-radius:12px;
+  padding:14px 16px;
+  box-shadow:0 1px 0 rgba(201,169,97,0.1);
+}
+.bcf-overflow-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.bcf-overflow-title{
+  display:flex;align-items:center;gap:8px;
+  font-family:'Sarabun',sans-serif;
+  font-size:14px;font-weight:700;
+  color:#7a5f1f;
+  letter-spacing:0.01em;
+}
+.bcf-overflow-title .bcf-overflow-badge{
+  background:#c9a961;color:#fff;
+  font-size:11px;font-weight:700;
+  padding:2px 8px;border-radius:10px;
+  letter-spacing:0.03em;
+}
+.bcf-overflow-hint{
+  font-size:11.5px;color:#9e7e3b;
+  font-style:italic;
+}
+.bcf-overflow-actions{
+  display:flex;align-items:center;gap:8px;
+}
+.bcf-overflow-toggle{
+  background:transparent;border:1px solid rgba(201,169,97,0.4);
+  color:#7a5f1f;font-size:12px;font-weight:600;
+  padding:5px 11px;border-radius:6px;
+  cursor:pointer;font-family:'Sarabun',sans-serif;
+  transition:all 0.15s;
+}
+.bcf-overflow-toggle:hover{background:rgba(201,169,97,0.12)}
+.bcf-overflow-add{
+  background:#c9a961;color:#fff;border:none;
+  font-size:12px;font-weight:700;
+  padding:5px 12px;border-radius:6px;
+  cursor:pointer;font-family:'Sarabun',sans-serif;
+  transition:all 0.15s;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.bcf-overflow-add:hover{background:#b69755;transform:translateY(-1px);box-shadow:0 2px 6px rgba(201,169,97,0.3)}
+.bcf-overflow-chips{
+  display:flex;flex-wrap:wrap;gap:10px;
+  align-items:stretch;
+}
+.bcf-overflow-empty{
+  font-size:12.5px;color:#a68a55;
+  padding:10px 14px;
+  background:rgba(255,255,255,0.5);
+  border:1px dashed rgba(201,169,97,0.4);
+  border-radius:8px;
+  text-align:center;
+  flex:1;min-width:200px;
+}
+.bcf-tmp-chip{
+  background:#fff;
+  border:1.5px solid rgba(201,169,97,0.45);
+  border-radius:9px;
+  padding:8px 10px 8px 12px;
+  min-width:170px;max-width:260px;
+  cursor:pointer;
+  transition:all 0.15s;
+  position:relative;
+  display:flex;flex-direction:column;gap:4px;
+  font-family:'Sarabun',sans-serif;
+}
+.bcf-tmp-chip:hover{
+  border-color:#c9a961;
+  background:#fffdf6;
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(201,169,97,0.18);
+}
+.bcf-tmp-chip.has-data{
+  background:linear-gradient(180deg,#fff 0%,#fffdf6 100%);
+  border-color:rgba(201,169,97,0.55);
+}
+.bcf-tmp-chip.exp-warn{
+  border-color:#e07820;
+  background:linear-gradient(180deg,#fff7ed 0%,#fff 100%);
+}
+.bcf-tmp-chip.exp-expired{
+  border-color:#c0392b;
+  background:linear-gradient(180deg,#fff0f0 0%,#fff 100%);
+}
+.bcf-tmp-chip-header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:6px;
+}
+.bcf-tmp-chip-label{
+  font-size:11px;font-weight:700;
+  color:#7a5f1f;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  display:flex;align-items:center;gap:5px;
+}
+.bcf-tmp-chip-label .ico{font-size:13px}
+.bcf-tmp-chip-remove{
+  background:transparent;border:none;
+  color:#bdb4a0;font-size:14px;
+  cursor:pointer;padding:0 4px;line-height:1;
+  border-radius:4px;
+  transition:all 0.12s;
+}
+.bcf-tmp-chip-remove:hover{
+  background:#fee2e2;color:#c0392b;
+}
+.bcf-tmp-chip-body{
+  font-size:13px;color:#1a2540;
+  line-height:1.35;
+  word-break:break-word;
+}
+.bcf-tmp-chip-empty-body{
+  font-size:11.5px;color:#a68a55;
+  font-style:italic;
+}
+.bcf-tmp-chip-item{
+  font-weight:600;line-height:1.3;margin-bottom:1px;
+}
+.bcf-tmp-chip-lot{
+  font-size:11px;color:#666;padding-left:2px;
+}
+/* Mobile adjustments */
+@media(max-width:640px){
+  .bcf-overflow-zone{padding:12px 12px;margin-top:14px}
+  .bcf-overflow-title{font-size:13px}
+  .bcf-overflow-hint{display:none}
+  .bcf-tmp-chip{min-width:140px;max-width:100%;flex:1 1 calc(50% - 5px)}
+}
+/* Hide overflow zone in print by default — printMap re-builds it */
+@media print{
+  .bcf-overflow-zone{display:none}
+}
+
 </style>
 </head>
 <body>
@@ -1896,7 +2041,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.10</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.11</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -1992,10 +2137,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.22";
-const BCF_BUILD = "20260508-1640";
+const BCF_VERSION = "18.23";
+const BCF_BUILD = "20260526-1530";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.10";
+const BCF_EDITION = "2026.11";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -2055,6 +2200,7 @@ function cleanupRoom2f2CCDD(){
 function migrateRoom2f2Merge(){ return cleanupRoom2f2CCDD(); }
 // Run once at load time
 cleanupRoom2f2CCDD();
+// Note: reconcileTmpCounts() is called later, after ck() and TMP helpers are defined
 
 // migrate older formats
 for(const[k,v] of Object.entries(data)){
@@ -2328,6 +2474,109 @@ function save(dirtyKeys){
   pushToSheets();
 }
 function ck(room,col,row){return room+'||'+col+'||'+row;}
+
+// ══════════════════════════════════════════
+//  TMP (OVERFLOW) CELLS — ช่องชั่วคราวสำหรับช่วงของล้น
+//  Key format: room||TMP||N  (เช่น room1||TMP||1)
+//  Stored count: localStorage bcf_tmp_counts = {room1:3, room2f1:0, ...}
+//  Always reconciled with actual data: count = max(stored, max_n_in_data)
+// ══════════════════════════════════════════
+var TMP_COL = 'TMP';
+var tmpCellCounts = {room1:0, room2f1:0, room2f2:0, room5:0};
+try{
+  var _tc = JSON.parse(localStorage.getItem('bcf_tmp_counts')||'{}');
+  Object.keys(tmpCellCounts).forEach(function(k){
+    if(typeof _tc[k] === 'number') tmpCellCounts[k] = _tc[k];
+  });
+}catch(e){}
+
+function isTmpCol(col){ return col === TMP_COL; }
+function isTmpKey(k){
+  if(!k) return false;
+  var parts = String(k).split('||');
+  return parts.length === 3 && parts[1] === TMP_COL;
+}
+function _saveTmpCounts(){
+  try{ localStorage.setItem('bcf_tmp_counts', JSON.stringify(tmpCellCounts)); }catch(e){}
+}
+// Reconcile: ensure stored count ≥ highest TMP row found in data for that room
+function reconcileTmpCounts(){
+  Object.keys(tmpCellCounts).forEach(function(rk){
+    var maxN = 0;
+    Object.keys(data).forEach(function(k){
+      var parts = k.split('||');
+      if(parts.length === 3 && parts[0] === rk && parts[1] === TMP_COL){
+        var n = parseInt(parts[2]);
+        if(!isNaN(n) && n > maxN) maxN = n;
+      }
+    });
+    if(maxN > (tmpCellCounts[rk]||0)){
+      tmpCellCounts[rk] = maxN;
+    }
+  });
+  _saveTmpCounts();
+}
+function getTmpCount(roomId){
+  return tmpCellCounts[roomId] || 0;
+}
+function addTmpCell(roomId){
+  if(!checkLock()) return;
+  if(!tmpCellCounts.hasOwnProperty(roomId)) tmpCellCounts[roomId] = 0;
+  tmpCellCounts[roomId] += 1;
+  _saveTmpCounts();
+  if(activeView==='map') renderMap();
+}
+function removeTmpCell(roomId, n){
+  if(!checkLock()) return;
+  var k = ck(roomId, TMP_COL, n);
+  var d = data[k];
+  var hasData = d && d.items && d.items.length;
+  if(hasData){
+    if(!confirm('ช่องชั่วคราว #'+n+' ยังมีของอยู่ — ลบช่องนี้แล้วของจะหายไปด้วย ยืนยันลบ?')) return;
+  }
+  // Delete data + tombstone
+  if(data[k]){
+    delete data[k];
+    deletedCells[k] = Date.now();
+  }
+  // Shift higher TMP cells down (TMP3 -> TMP2 ถ้าลบ TMP2)
+  var count = getTmpCount(roomId);
+  for(var i = n; i < count; i++){
+    var fromK = ck(roomId, TMP_COL, i+1);
+    var toK   = ck(roomId, TMP_COL, i);
+    if(data[fromK]){
+      data[toK] = data[fromK];
+      delete data[fromK];
+      deletedCells[fromK] = Date.now();
+    }
+  }
+  tmpCellCounts[roomId] = Math.max(0, count - 1);
+  _saveTmpCounts();
+  try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+  save();
+  if(activeView==='map') renderMap();
+}
+// Return list of TMP cells for a room: [{room,col:'TMP',row:1,key,data}, ...]
+function getTmpCells(roomId){
+  var n = getTmpCount(roomId);
+  var out = [];
+  for(var i = 1; i <= n; i++){
+    out.push({room:roomId, col:TMP_COL, row:i, key:ck(roomId,TMP_COL,i)});
+  }
+  return out;
+}
+// Friendly label for a cell — handles TMP specially
+function cellLocationLabel(col, row){
+  if(col === TMP_COL) return 'ชั่วคราว #'+row;
+  return col + row;
+}
+// Short version for tight UI
+function cellShortLabel(col, row){
+  if(col === TMP_COL) return 'TMP'+row;
+  return col + row;
+}
+// Reconcile counts with actual data on startup
+try{ reconcileTmpCounts(); }catch(e){}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function tsNow(){const n=new Date();return n.toLocaleDateString('th-TH')+' '+n.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});}
 function addHist(type,room,col,row,detail){
@@ -3061,8 +3310,111 @@ function renderMap(){
     h+=`</tr>`;
   }
   h+=`</tbody></table></div>`;
+
+  // ── Overflow Zone (TMP cells) ──
+  h += renderOverflowZone(activeRoom);
+
   document.getElementById('mainContent').innerHTML=h;
   if(highlightName) setTimeout(applyHighlight,10);
+}
+
+// ══════════════════════════════════════════
+//  OVERFLOW ZONE RENDERER — TMP cells under main grid
+// ══════════════════════════════════════════
+function renderOverflowZone(roomId){
+  var tmpCells = getTmpCells(roomId);
+  var count = tmpCells.length;
+  var hasFilter = window.mapFiltName || window.mapFiltMonth || window.mapFiltYear;
+
+  var headHtml = '<div class="bcf-overflow-header">'
+    + '<div class="bcf-overflow-title">'
+    + '<span class="ico">📦</span>'
+    + '<span>ช่องชั่วคราว</span>'
+    + (count > 0 ? '<span class="bcf-overflow-badge">'+count+'</span>' : '')
+    + '<span class="bcf-overflow-hint">— ใช้ตอนของล้น/ทางเดิน · ค้นหา-เบิก-ย้ายได้ปกติ</span>'
+    + '</div>'
+    + '<div class="bcf-overflow-actions">'
+    + '<button class="bcf-overflow-add" onclick="addTmpCell(\''+roomId+'\')" title="เพิ่มช่องชั่วคราวใหม่">+ เพิ่มช่อง</button>'
+    + '</div></div>';
+
+  if(count === 0){
+    return '<div class="bcf-overflow-zone" id="overflowZone">'
+      + headHtml
+      + '<div class="bcf-overflow-empty">— ยังไม่มีช่องชั่วคราว — กด "เพิ่มช่อง" เพื่อสร้าง</div>'
+      + '</div>';
+  }
+
+  // Build chips
+  var mthNames = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  var chipsHtml = tmpCells.map(function(tc){
+    var d = data[tc.key];
+    var items = (d && d.items) ? d.items.filter(function(it){return it.name;}) : [];
+    var hasData = items.length > 0;
+
+    // Compute expiry status (worst)
+    var expSt = null;
+    if(hasData){
+      expSt = cellExpStatus(items);
+    }
+
+    // Apply map filter dim
+    var matchesFilter = true;
+    if(hasFilter){
+      matchesFilter = items.some(function(it){
+        var nameOk = !window.mapFiltName || it.name === window.mapFiltName;
+        var lotDate = parseLot(it.lot);
+        var monthOk = !window.mapFiltMonth || (lotDate && (lotDate.getMonth()+1).toString().padStart(2,'0') === window.mapFiltMonth);
+        var yearOk = !window.mapFiltYear || (lotDate && lotDate.getFullYear().toString() === window.mapFiltYear);
+        return nameOk && monthOk && yearOk;
+      });
+    }
+
+    var classes = ['bcf-tmp-chip'];
+    if(hasData) classes.push('has-data');
+    if(expSt === 'expired') classes.push('exp-expired');
+    else if(expSt === 'expiring') classes.push('exp-warn');
+    if(hasFilter && !matchesFilter) classes.push('dimmed');
+    if(hasFilter && matchesFilter && hasData) classes.push('highlighted');
+
+    var bodyHtml = '';
+    if(!hasData){
+      bodyHtml = '<div class="bcf-tmp-chip-empty-body">— ว่าง — กดเพื่อเพิ่ม</div>';
+    } else {
+      // Group by name (max 3 lines for compactness)
+      var pGrpMap = {}, pGrpOrder = [];
+      items.forEach(function(it){
+        var key = it.name + '||' + (it.color || '#1a1a1a');
+        if(!pGrpMap[key]){ pGrpMap[key] = {name:it.name, color:it.color||'#1a1a1a', lots:[]}; pGrpOrder.push(key); }
+        pGrpMap[key].lots.push(it);
+      });
+      bodyHtml = pGrpOrder.slice(0,3).map(function(key){
+        var g = pGrpMap[key];
+        g.lots.sort(function(a,b){ var da=parseLot(a.lot), db=parseLot(b.lot); if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1; return da-db; });
+        var lotLines = g.lots.slice(0,2).map(function(it){
+          var pqtys = (it.qtys && it.qtys.length ? it.qtys : [{q:it.qty||'',u:it.unit||''}]).filter(function(q){return q.q||q.u;});
+          var qStr = pqtys.map(function(q){return (q.q||'')+(q.u?' '+q.u:'');}).join('/');
+          var lotDisp = it.lot ? formatLotDisplay(it.lot) : '';
+          return (lotDisp || qStr) ? '<div class="bcf-tmp-chip-lot">'+esc(lotDisp)+(qStr?' = '+esc(qStr):'')+'</div>' : '';
+        }).join('');
+        var moreLots = g.lots.length > 2 ? '<div class="bcf-tmp-chip-lot" style="color:#999">+ '+(g.lots.length-2)+' LOT</div>' : '';
+        return '<div class="bcf-tmp-chip-item" style="color:'+g.color+'">'+esc(g.name)+'</div>' + lotLines + moreLots;
+      }).join('');
+      if(pGrpOrder.length > 3) bodyHtml += '<div class="bcf-tmp-chip-lot" style="color:#999">+ '+(pGrpOrder.length-3)+' รายการ</div>';
+    }
+
+    return '<div class="'+classes.join(' ')+'" onclick="openCell(\''+TMP_COL+'\','+tc.row+')">'
+      + '<div class="bcf-tmp-chip-header">'
+      + '<span class="bcf-tmp-chip-label"><span class="ico">📦</span>TMP'+tc.row+'</span>'
+      + '<button class="bcf-tmp-chip-remove" onclick="event.stopPropagation();removeTmpCell(\''+roomId+'\','+tc.row+')" title="ลบช่องนี้">✕</button>'
+      + '</div>'
+      + '<div class="bcf-tmp-chip-body">' + bodyHtml + '</div>'
+      + '</div>';
+  }).join('');
+
+  return '<div class="bcf-overflow-zone" id="overflowZone">'
+    + headHtml
+    + '<div class="bcf-overflow-chips">' + chipsHtml + '</div>'
+    + '</div>';
 }
 
 function openCell(col,row){ if(!checkLock()) return;
@@ -3080,7 +3432,10 @@ function openCell(col,row){ if(!checkLock()) return;
     return it;
   }):[{name:'',color:'#1a1a1a',lotRows:[{lot:'',qtys:[{q:'',u:''}]}]}];
   modalNote=d.note||'';
-  document.getElementById('modalTitle').textContent=`ช่อง ${col}${row} — ${ROOMS[activeRoom].name}`;
+  var titleText = (col === TMP_COL)
+    ? ('ช่องชั่วคราว #' + row + ' — ' + ROOMS[activeRoom].name)
+    : ('ช่อง ' + col + row + ' — ' + ROOMS[activeRoom].name);
+  document.getElementById('modalTitle').textContent = titleText;
   renderModalBody();
   document.getElementById('modalBg').classList.add('open');
 }
@@ -3649,11 +4004,13 @@ function applyFilter(){
     const st=it.expStatus;
     const rowCls=st==='expired'?'row-expired':st==='expiring'?'row-expiring':'';
     const tagHtml=st==='expired'?'<span class="tag tag-exp">หมดอายุ</span>':st==='expiring'?'<span class="tag tag-soon">ใกล้หมด</span>':st==='ok'?'<span class="tag tag-ok">ปกติ</span>':'<span style="color:#bbb;font-size:11px">—</span>';
-    const badgeCls=it.isWalkway?' badge-warn':st==='expired'?' badge-danger':st==='expiring'?' badge-warn':'';
+    const isTmp = it.col === TMP_COL;
+    const badgeCls=isTmp?' badge-warn':it.isWalkway?' badge-warn':st==='expired'?' badge-danger':st==='expiring'?' badge-warn':'';
+    const cellLabel = isTmp ? ('📦TMP'+it.row) : (esc(it.col)+it.row + (it.isWalkway?' ⚠️':''));
     const expStr=it.expDate?it.expDate.toLocaleDateString('en-GB'):'—';
     tbl+=`<tr class="${rowCls}">
       <td style="font-size:12px">${esc(ROOMS[it.room]?.name||it.room)}</td>
-      <td><span class="badge${badgeCls}">${esc(it.col)}${it.row}${it.isWalkway?' ⚠️':''}</span></td>
+      <td><span class="badge${badgeCls}" title="${isTmp?'ช่องชั่วคราว':''}">${cellLabel}</span></td>
       <td style="color:${esc(it.color||'#1a1a1a')};font-weight:600">${esc(it.name)}</td>
       <td style="font-size:12px;font-weight:600">${esc(formatLotDisplay(it.lot)||'—')}</td>
       <td style="font-size:12px;color:${st==='expired'?'#c0392b':st==='expiring'?'#c05800':'#1a1a1a'}">${expStr}</td>
@@ -3834,9 +4191,12 @@ function applySearchFilter(){
       :st==='expiring'?'<span class="tag tag-soon">ใกล้หมด</span>'
       :st==='ok'?'<span class="tag tag-ok">ปกติ</span>':'—';
     var expStr = it.expDate ? it.expDate.toLocaleDateString('en-GB') : '—';
+    var _isTmp = it.col === TMP_COL;
+    var _badgeCls = _isTmp ? ' badge-warn' : '';
+    var _cellLabel = _isTmp ? ('📦TMP'+it.row) : (esc(it.col)+it.row);
     html += '<tr style="background:'+rowBg+'">'
       + '<td style="font-size:12px">'+esc(ROOMS[it.room]?.name||it.room)+'</td>'
-      + '<td><span class="badge">'+esc(it.col)+it.row+'</span></td>'
+      + '<td><span class="badge'+_badgeCls+'" title="'+(_isTmp?'ช่องชั่วคราว':'')+'">'+_cellLabel+'</span></td>'
       + '<td style="color:'+esc(it.color||'#1a1a1a')+';font-weight:600">'+esc(it.name)+'</td>'
       + '<td style="font-size:12px;font-weight:600">'+esc(formatLotDisplay(it.lot)||'—')+'</td>'
       + '<td style="font-size:12px;color:'+(st==='expired'?'#c0392b':st==='expiring'?'#c05800':'#1a1a1a')+'">'+expStr+'</td>'
@@ -3883,10 +4243,12 @@ function exportSearchPDF(){
     var stLabel = st==='expired'?'หมดอายุ':st==='expiring'?'ใกล้หมด':st==='ok'?'ปกติ':'—';
     var stColor = st==='expired'?'#c0392b':st==='expiring'?'#c05800':st==='ok'?'#2d7a1f':'#999';
     var expStr  = it.expDate ? it.expDate.toLocaleDateString('en-GB') : '—';
+    var _isTmp  = it.col === TMP_COL;
+    var _cellLabel = _isTmp ? ('📦TMP'+it.row) : (it.col+it.row);
     return '<tr style="background:'+bg+'">'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px">'+(idx+1)+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px">'+(ROOMS[it.room]?.name||it.room)+'</td>'
-      + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px;font-weight:600">'+it.col+it.row+'</td>'
+      + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px;font-weight:600"'+(_isTmp?' title="ช่องชั่วคราว"':'')+'>'+_cellLabel+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-weight:600;color:'+(it.color||'#1a1a1a')+'">'+it.name+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px;font-weight:600">'+(formatLotDisplay(it.lot)||'—')+'</td>'
       + '<td style="padding:5px 8px;border:1px solid #eee;font-size:11px">'+expStr+'</td>'
@@ -4087,11 +4449,13 @@ function buildHistList(){
     }
     // Who made the change (user who logged in at the time)
     var byStr = hh.by ? '<div style="font-size:10px;color:#6366f1;margin-top:3px;font-weight:600">👤 '+esc(hh.by)+'</div>' : '';
+    var _isTmpHh = hh.col === TMP_COL;
+    var _cellLabelHh = _isTmpHh ? ('📦TMP'+(hh.row||'')) : (esc(hh.col||'')+(hh.row?hh.row:''));
     html += '<div style="background:#fff;border:1px solid #e4e7ec;border-radius:7px;padding:9px 13px;display:flex;gap:10px;align-items:flex-start">'
       + '<span style="background:'+tBg+';color:'+tColor+';font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0;margin-top:1px">'+esc(hh.type||'แก้ไข')+'</span>'
       + '<div style="flex:1;min-width:0">'
       + '<div style="font-size:12px;color:#1a1a1a;word-break:break-word">'+esc(hh.detail||'')+'</div>'
-      + '<div style="font-size:11px;color:#667085;margin-top:2px">'+(room?'<span class="badge">'+esc(room)+'</span> ':'')+esc(hh.col||'')+(hh.row?hh.row:'')+'</div>'
+      + '<div style="font-size:11px;color:#667085;margin-top:2px">'+(room?'<span class="badge">'+esc(room)+'</span> ':'')+_cellLabelHh+'</div>'
       + byStr
       + '</div>'
       + '<div style="font-size:10px;color:#8a94a6;flex-shrink:0;text-align:right;line-height:1.4">'+dateStr+'</div>'
@@ -4205,7 +4569,8 @@ function exportCSV(){
   for(const it of items){
     const st=it.expStatus==='expired'?'หมดอายุ':it.expStatus==='expiring'?'ใกล้หมด':it.expStatus==='ok'?'ปกติ':'ไม่ระบุ';
     const expStr=it.expDate?it.expDate.toLocaleDateString('en-GB'):'';
-    csv+=`"${ROOMS[it.room]?.name||it.room}","${it.col}${it.row}","${it.isWalkway?'ทางเดิน':'ปกติ'}","${it.name||''}","${formatLotDisplay(it.lot)||''}","${expStr}","${st}","${it.qtyStr||''}","${it.note||''}"\n`;
+    const _cellType = it.col===TMP_COL ? 'ชั่วคราว' : (it.isWalkway?'ทางเดิน':'ปกติ');
+    csv+=`"${ROOMS[it.room]?.name||it.room}","${cellShortLabel(it.col,it.row)}","${_cellType}","${it.name||''}","${formatLotDisplay(it.lot)||''}","${expStr}","${st}","${it.qtyStr||''}","${it.note||''}"\n`;
   }
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -4236,8 +4601,10 @@ function exportPDF(){
       const stLabel=st==='expired'?'หมดอายุ':st==='expiring'?'ใกล้หมด':st==='ok'?'ปกติ':'—';
       const stColor=st==='expired'?'#c0392b':st==='expiring'?'#c05800':st==='ok'?'#2d7a1f':'#999';
       const expStr=it.expDate?it.expDate.toLocaleDateString('en-GB'):'—';
+      const _isTmp=it.col===TMP_COL;
+      const _cellLabel=_isTmp?('📦TMP'+it.row):(esc(it.col)+it.row+(it.isWalkway?' ⚠️':''));
       return `<tr style="background:${rowBg}">
-        <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px">${esc(it.col)}${it.row}${it.isWalkway?' ⚠️':''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px">${_cellLabel}</td>
         <td style="padding:5px 8px;border-bottom:1px solid #eee;font-weight:600;color:${esc(it.color||'#1a1a1a')};font-size:11px">${esc(it.name)}</td>
         <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px;font-weight:600">${esc(formatLotDisplay(it.lot)||'—')}</td>
         <td style="padding:5px 8px;border-bottom:1px solid #eee;font-size:11px">${expStr}</td>
@@ -4325,9 +4692,11 @@ function exportPDF(){
         const st=it.expStatus==='expired'?'🔴 หมดอายุ':'🟡 ใกล้หมด';
         const bg=it.expStatus==='expired'?'#fff5f5':'#fffaf0';
         const expStr=it.expDate?it.expDate.toLocaleDateString('en-GB'):'—';
+        const _isTmp=it.col===TMP_COL;
+        const _cellLabel=_isTmp?('📦TMP'+it.row):(esc(it.col)+it.row);
         return `<tr style="background:${bg}">
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px">${esc(ROOMS[it.room]?.name||it.room)}</td>
-          <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px;font-weight:700">${esc(it.col)}${it.row}</td>
+          <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px;font-weight:700"${_isTmp?' title="ช่องชั่วคราว"':''}>${_cellLabel}</td>
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-weight:600;font-size:11px">${esc(it.name)}</td>
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px;font-weight:600">${esc(formatLotDisplay(it.lot)||'—')}</td>
           <td style="padding:5px 8px;border-bottom:1px solid #f5e0e0;font-size:11px">${expStr}</td>
@@ -4354,6 +4723,23 @@ function exportPDF(){
 
 // ── PRINT MAP ──
 function printMap(){
+  // ── ถ้ามีช่องชั่วคราว ถามว่าจะรวมในใบพิมพ์ด้วยหรือไม่ ──
+  var tmpCells = getTmpCells(activeRoom);
+  var hasTmpWithData = tmpCells.some(function(tc){
+    var d = data[tc.key];
+    return d && d.items && d.items.length > 0;
+  });
+  var includeTmp = false;
+  if(tmpCells.length > 0){
+    var msg = hasTmpWithData
+      ? 'ห้องนี้มีช่องชั่วคราว '+tmpCells.length+' ช่อง (มีของบางช่อง)\n\nต้องการพิมพ์ช่องชั่วคราวในใบพิมพ์ด้วยหรือไม่?\n\n• กด "ตกลง" = พิมพ์ผังหลัก + ช่องชั่วคราว\n• กด "ยกเลิก" = พิมพ์เฉพาะผังหลัก'
+      : 'ห้องนี้มีช่องชั่วคราว '+tmpCells.length+' ช่อง (ทั้งหมดยังว่าง)\n\nต้องการพิมพ์ช่องชั่วคราวด้วยหรือไม่?';
+    includeTmp = confirm(msg);
+  }
+  _doPrintMap(includeTmp);
+}
+
+function _doPrintMap(includeTmp){
   const room=ROOMS[activeRoom];
   function buildRowsHTML(rowSubset, cellStyle, fontScale){
     const fs = fontScale || 1;
@@ -4428,7 +4814,7 @@ function printMap(){
   }
 
   const today=new Date().toLocaleDateString('th-TH');
-  const pagesHTML=pages.map((p,idx)=>{
+  let pagesHTML=pages.map((p,idx)=>{
     const fs = p.fontScale || 1;
     const rowsHTML=buildRowsHTML(p.rows, '', fs);
     const headerRow=`<tr><th style="border:1px solid #bbb;padding:4px;background:#f0f0f0;font-size:${headerFontSize};width:36px"></th>${room.cols.map(c=>`<th style="border:1px solid #bbb;padding:5px 6px;background:#f0f0f0;font-size:${headerFontSize};font-weight:700;text-align:center">${c}</th>`).join('')}</tr>`;
@@ -4441,6 +4827,69 @@ function printMap(){
       <table class="grid"><thead>${headerRow}</thead><tbody>${rowsHTML}</tbody></table>
     </section>`;
   }).join('');
+
+  // ── Append TMP (overflow) page if requested ──
+  if(includeTmp){
+    var tmpCellsAll = getTmpCells(activeRoom);
+    if(tmpCellsAll.length > 0){
+      // Build TMP cards (4 columns on landscape, 3 on portrait)
+      var tmpCols = pageOrientation === 'landscape' ? 4 : 3;
+      var tmpCardWidth = (100 / tmpCols).toFixed(2) + '%';
+      var tmpCardsHTML = tmpCellsAll.map(function(tc){
+        var d = data[tc.key];
+        var items = (d && d.items) ? d.items.filter(function(it){return it.name;}) : [];
+        var hasData = items.length > 0;
+        // Group by name
+        var pGrp = {}, pOrder = [];
+        items.forEach(function(it){
+          var key = it.name + '||' + (it.color || '#1a1a1a');
+          if(!pGrp[key]){ pGrp[key] = {name:it.name, color:it.color||'#1a1a1a', lots:[]}; pOrder.push(key); }
+          pGrp[key].lots.push(it);
+        });
+        var bodyInner = '';
+        if(!hasData){
+          bodyInner = '<div style="color:#aaa;font-style:italic;text-align:center;padding:14px 0;font-size:10px">— ว่าง —</div>';
+        } else {
+          bodyInner = pOrder.map(function(key){
+            var g = pGrp[key];
+            g.lots.sort(function(a,b){var da=parseLot(a.lot),db=parseLot(b.lot);if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;});
+            var lotLines = g.lots.map(function(it){
+              var pqtys = (it.qtys && it.qtys.length ? it.qtys : [{q:it.qty||'',u:it.unit||''}]).filter(function(q){return q.q||q.u;});
+              var qStr = pqtys.map(function(q){return (q.q||'')+(q.u?' '+q.u:'');}).join('/');
+              var lotColorCode = lotColor(it.lot);
+              return (it.lot || qStr) ? '<div style="font-size:9px;color:'+lotColorCode+';padding-left:3px;line-height:1.3">'+(it.lot?formatLotDisplay(it.lot):'')+(qStr?' = '+qStr:'')+'</div>' : '';
+            }).join('');
+            return '<div style="color:'+g.color+';font-weight:700;font-size:11px;line-height:1.3;margin-bottom:1px">'+esc(g.name)+'</div>' + lotLines;
+          }).join('');
+          if(d && d.note){
+            bodyInner += '<div style="font-size:9px;color:#999;border-top:1px dashed #ddd;margin-top:3px;padding-top:2px">📝'+esc(d.note)+'</div>';
+          }
+        }
+        return '<td style="border:1.5px solid #c9a961;padding:6px 8px;background:#fffdf6;vertical-align:top;width:'+tmpCardWidth+'">'
+          + '<div style="font-size:10px;color:#7a5f1f;font-weight:800;letter-spacing:0.04em;text-transform:uppercase;border-bottom:1px solid rgba(201,169,97,0.3);padding-bottom:2px;margin-bottom:3px">📦 TMP'+tc.row+'</div>'
+          + bodyInner
+          + '</td>';
+      });
+      // Build grid: chunk into rows of tmpCols
+      var tmpRowsHTML = '';
+      for(var i = 0; i < tmpCardsHTML.length; i += tmpCols){
+        var rowCells = tmpCardsHTML.slice(i, i + tmpCols).join('');
+        // Pad with empty cells if last row is incomplete
+        var pad = tmpCols - (tmpCardsHTML.slice(i, i + tmpCols).length);
+        for(var p = 0; p < pad; p++){
+          rowCells += '<td style="border:none;width:'+tmpCardWidth+'"></td>';
+        }
+        tmpRowsHTML += '<tr style="vertical-align:top">' + rowCells + '</tr>';
+      }
+      pagesHTML += `<section class="print-page">
+        <div class="page-header" style="border-bottom:2px solid #c9a961">
+          <div class="page-title" style="color:#7a5f1f">${room.name} — <span style="color:#c9a961">📦 ช่องชั่วคราว (Overflow)</span></div>
+          <div class="page-sub">บริษัท ฟาร์มไก่ดำ (กาญจนบุรี) จำกัด · ${tmpCellsAll.length} ช่อง · พิมพ์: ${today}</div>
+        </div>
+        <table class="grid" style="border-collapse:separate;border-spacing:6px"><tbody>${tmpRowsHTML}</tbody></table>
+      </section>`;
+    }
+  }
 
   // Compute page dimensions (A4 with 6mm margins inside printable area)
   const pageW = pageOrientation==='landscape' ? '297mm' : '210mm';
@@ -4545,6 +4994,17 @@ function refreshTxInCells(){
       opts.push(`<option value="${col}|${row}">${label}</option>`);
     }
   }
+  // ── TMP cells (overflow zone) ──
+  var tmpCells = getTmpCells(roomKey);
+  if(tmpCells.length){
+    opts.push('<option disabled>──── ช่องชั่วคราว ────</option>');
+    tmpCells.forEach(function(tc){
+      var d = data[tc.key];
+      var hasData = d && d.items && d.items.length > 0;
+      var label = '📦 TMP'+tc.row + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+      opts.push('<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>');
+    });
+  }
   cellSel.innerHTML = opts.join('');
   refreshTxInItems();
 }
@@ -4621,7 +5081,7 @@ function submitTxIn(){
 
   if(cellVal){
     const [col,row] = cellVal.split('|');
-    cellPos = col+row;
+    cellPos = cellShortLabel(col,row);
     const k = ck(roomKey,col,row);
     if(!data[k]) data[k] = {items:[], note:''};
     data[k]._mt = Date.now(); // update modified time
@@ -4867,6 +5327,19 @@ function getRoomItems(roomKey){
       });
     }
   }
+  // ── TMP cells (overflow zone) ──
+  var tmpCells = getTmpCells(roomKey);
+  tmpCells.forEach(function(tc){
+    var d = data[tc.key];
+    if(!d || !d.items) return;
+    d.items.forEach(function(it){
+      if(it.name){
+        var qtys = it.qtys && it.qtys.length ? it.qtys : [{q:it.qty||'',u:it.unit||''}];
+        var qStr = qtys.filter(function(q){return q.q||q.u;}).map(function(q){return (q.q||'')+(q.u?' '+q.u:'');}).join(' / ');
+        out.push({room:roomKey,col:tc.col,row:tc.row,name:it.name,lot:it.lot||'',qtyStr:qStr,qtys:qtys,cellKey:tc.key,item:it});
+      }
+    });
+  });
   return out;
 }
 
@@ -4876,7 +5349,7 @@ function refreshTxOutItems(){
   if(!sel) return;
   var items=getRoomItems(roomKey);
   sel.innerHTML='<option value="">-- เลือกสินค้า --</option>'+
-    items.map(function(it,i){ return '<option value="'+i+'">'+it.name+' ('+it.col+it.row+') '+(it.qtyStr?'| '+it.qtyStr:'')+'</option>'; }).join('');
+    items.map(function(it,i){ var _loc = it.col===TMP_COL?('📦TMP'+it.row):(it.col+it.row); return '<option value="'+i+'">'+it.name+' ('+_loc+') '+(it.qtyStr?'| '+it.qtyStr:'')+'</option>'; }).join('');
   sel._items=items;
   updateTxOutBalance();
 }
@@ -4968,7 +5441,7 @@ async function submitTxOut(){
 
   txList.unshift({
     type:'เบิก',room:roomKey,roomName:ROOMS[roomKey]?.name||roomKey,
-    itemName:it.name,lot:it.lot||'',cellPos:it.col+it.row,
+    itemName:it.name,lot:it.lot||'',cellPos:cellShortLabel(it.col,it.row),
     qty:qtyStr,unit:'',customer:customer,by:by,date:date,note:note,
     remaining:remaining,ts:new Date().toISOString()
   });
@@ -5342,6 +5815,19 @@ function getCellOptions(roomKey, includeEmpty){
       opts += `<option value="${col}|${row}">${label}</option>`;
     }
   }
+  // ── TMP cells (overflow zone) ──
+  var tmpCells = getTmpCells(roomKey);
+  var tmpOpts = '';
+  tmpCells.forEach(function(tc){
+    var d = data[tc.key];
+    var hasData = d && d.items && d.items.length > 0;
+    if(!includeEmpty && !hasData) return;
+    var label = '📦 TMP'+tc.row + (hasData ? ' ('+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+    tmpOpts += '<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>';
+  });
+  if(tmpOpts){
+    opts += '<option disabled>──── ช่องชั่วคราว ────</option>' + tmpOpts;
+  }
   return opts;
 }
 
@@ -5447,6 +5933,17 @@ function refreshSwapCells(side){
       opts += `<option value="${col}|${row}">${label}</option>`;
     }
   }
+  // ── TMP cells ──
+  var tmpCells = getTmpCells(roomKey);
+  if(tmpCells.length){
+    opts += '<option disabled>──── ช่องชั่วคราว ────</option>';
+    tmpCells.forEach(function(tc){
+      var d = data[tc.key];
+      var hasData = d && d.items && d.items.length > 0;
+      var label = '📦 TMP'+tc.row + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+      opts += '<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>';
+    });
+  }
   sel.innerHTML = opts;
   sel.onchange = function(){ updateSwapPreview(side); };
   updateSwapPreview(side);
@@ -5504,10 +6001,10 @@ function submitSwap(){
 
   txList.unshift({
     type:'ย้าย', room:fromRoom, roomName:ROOMS[fromRoom]?.name||fromRoom,
-    itemName:'สลับช่อง '+fromCol+fromRow+' ↔ '+toCol+toRow,
-    lot:'', cellPos:fromCol+fromRow,
+    itemName:'สลับช่อง '+cellShortLabel(fromCol,fromRow)+' ↔ '+cellShortLabel(toCol,toRow),
+    lot:'', cellPos:cellShortLabel(fromCol,fromRow),
     qty:'', unit:'',
-    customer:ROOMS[toRoom]?.name+' ช่อง '+toCol+toRow,
+    customer:ROOMS[toRoom]?.name+' ช่อง '+cellShortLabel(toCol,toRow),
     by:by, date:date, note:'',
     remaining:'', ts:new Date().toISOString()
   });
@@ -5603,9 +6100,9 @@ function submitMove(){
 
   txList.unshift({
     type:'ย้าย', room:fromRoom, roomName:ROOMS[fromRoom]?.name||fromRoom,
-    itemName:itemName, lot:'', cellPos:fromCol+fromRow,
+    itemName:itemName, lot:'', cellPos:cellShortLabel(fromCol,fromRow),
     qty:movedSummary.join(' | '), unit:'',
-    customer:'ย้ายไป: '+(ROOMS[toRoom]?.name||toRoom)+' ช่อง '+toCol+toRow,
+    customer:'ย้ายไป: '+(ROOMS[toRoom]?.name||toRoom)+' ช่อง '+cellShortLabel(toCol,toRow),
     by:by, date:date, note:note,
     remaining:'', ts:new Date().toISOString()
   });
@@ -5840,7 +6337,7 @@ function buildFlashCards(){
     const name = it.name;
     if(!byName[name]) byName[name] = {name:name, color:it.color||'#1a1a1a', lots:[]};
     const qtys = (it.qtys&&it.qtys.length?it.qtys:[{q:it.qty||'',u:it.unit||''}]).filter(function(q){return q.q||q.u;});
-    byName[name].lots.push({lot:it.lot||'', qtys:qtys, room:ROOMS[it.room]?.name||it.room, pos:it.col+it.row});
+    byName[name].lots.push({lot:it.lot||'', qtys:qtys, room:ROOMS[it.room]?.name||it.room, pos:cellShortLabel(it.col,it.row)});
   });
 
   // Sort lots by date within each product
@@ -5949,7 +6446,7 @@ function getFlashData(){
     var name = it.name;
     if(!byName[name]) byName[name] = {name:name, color:it.color||'#1a1a1a', lots:[]};
     var qtys = (it.qtys&&it.qtys.length?it.qtys:[{q:it.qty||'',u:it.unit||''}]).filter(function(q){return q.q||q.u;});
-    byName[name].lots.push({lot:it.lot||'', qtys:qtys, room:ROOMS[it.room]?.name||it.room, pos:it.col+it.row});
+    byName[name].lots.push({lot:it.lot||'', qtys:qtys, room:ROOMS[it.room]?.name||it.room, pos:cellShortLabel(it.col,it.row)});
   });
   Object.values(byName).forEach(function(prod){
     prod.lots.sort(function(a,b){
@@ -5979,7 +6476,7 @@ function getFcData(){
     var name = it.name;
     if(!byName[name]) byName[name] = {name:name, lots:[]};
     var qtys = (it.qtys&&it.qtys.length?it.qtys:[{q:it.qty||'',u:it.unit||''}]).filter(function(q){return q.q||q.u;});
-    byName[name].lots.push({lot:it.lot||'', qtys:qtys, room:ROOMS[it.room]?ROOMS[it.room].name:it.room, pos:it.col+it.row, expDate:expiryDate(it.lot), expStatus:expiryStatus(it.lot)});
+    byName[name].lots.push({lot:it.lot||'', qtys:qtys, room:ROOMS[it.room]?ROOMS[it.room].name:it.room, pos:cellShortLabel(it.col,it.row), expDate:expiryDate(it.lot), expStatus:expiryStatus(it.lot)});
   });
   Object.values(byName).forEach(function(prod){
     prod.lots.sort(function(a,b){var da=parseLot(a.lot),db=parseLot(b.lot);if(!da&&!db)return 0;if(!da)return 1;if(!db)return -1;return da-db;});
@@ -6776,7 +7273,7 @@ function getStockData(){
     byName[it.name].lots.push({
       lot:it.lot||'', qtys:qtys,
       room:ROOMS[it.room]?ROOMS[it.room].name:it.room,
-      pos:it.col+it.row,
+      pos:cellShortLabel(it.col,it.row),
       expDate:expiryDate(it.lot),
       expStatus:it.expStatus
     });
@@ -10909,6 +11406,8 @@ async function pullFromSheets(){
         Object.keys(data).forEach(function(k){ markDirty(k); });
       }
     } catch(e){ console.error('post-pull migration error:', e); }
+    // Reconcile TMP cell counts with merged cloud data
+    try{ reconcileTmpCounts(); }catch(e){}
     hasReceivedCloudData = true;
     try { makeSnapshot('post-pull'); } catch(e) {}
     setSyncUI('ok','เชื่อมต่อ Google Sheets ✓');
