@@ -2065,7 +2065,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.12</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.14</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -2161,10 +2161,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.24";
-const BCF_BUILD = "20260526-1700";
+const BCF_VERSION = "18.26";
+const BCF_BUILD = "20260610-2230";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.12";
+const BCF_EDITION = "2026.14";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -2630,7 +2630,9 @@ function cellShortLabel(col, row){
 // Get the current user-set label of a TMP cell (empty string if none)
 function tmpLabelOf(roomId, row){
   var d = data[ck(roomId, TMP_COL, row)];
-  return d && d.label ? String(d.label).trim().slice(0,15) : '';
+  if(!d || !d.label) return '';
+  // Sanitize even at read time — label may come from cloud sync
+  return String(d.label).replace(/[\u0000-\u001f"<>]/g,'').trim().slice(0,15);
 }
 // Display label: "TMP1" or "TMP1 - หน้าประตู"
 function tmpDisplayLabel(roomId, row){
@@ -3371,7 +3373,7 @@ function renderMap(){
         if(d&&d.note) inner+=`<div class="cell-note-preview">📝 ${esc(d.note.length>28?d.note.slice(0,28)+'...':d.note)}</div>`;
         var cellItemNames = items.map(function(it){return it.name;});
         var filteredCls = cls + (isFiltering && !matchesFilter ? ' dimmed' : '') + (isFiltering && matchesFilter && hasData ? ' highlighted' : '');
-        h+=`<td class="${filteredCls}" data-items="${esc(JSON.stringify([...new Set(cellItemNames)])  )}" style="width:${colW}px;min-width:${colW}px" onclick="openCell('${esc(col)}',${row})"><div style="min-height:${cellH}px;padding:6px 7px">${inner}</div></td>`;
+        h+=`<td class="${filteredCls}" data-key="${esc(ck(activeRoom,col,row))}" data-items="${esc(JSON.stringify([...new Set(cellItemNames)])  )}" style="width:${colW}px;min-width:${colW}px" onclick="openCell('${esc(col)}',${row})"><div style="min-height:${cellH}px;padding:6px 7px">${inner}</div></td>`;
       }
     }
     h+=`</tr>`;
@@ -3469,7 +3471,7 @@ function renderOverflowZone(roomId){
       if(pGrpOrder.length > 3) bodyHtml += '<div class="bcf-tmp-chip-lot" style="color:#999">+ '+(pGrpOrder.length-3)+' รายการ</div>';
     }
 
-    return '<div class="'+classes.join(' ')+'" data-items="'+esc(JSON.stringify([...new Set(items.map(function(it){return it.name;}))]))+'" onclick="openCell(\''+TMP_COL+'\','+tc.row+')">'
+    return '<div class="'+classes.join(' ')+'" data-key="'+esc(tc.key)+'" data-items="'+esc(JSON.stringify([...new Set(items.map(function(it){return it.name;}))]))+'" onclick="openCell(\''+TMP_COL+'\','+tc.row+')">'
       + '<div class="bcf-tmp-chip-header">'
       + '<span class="bcf-tmp-chip-label"><span class="ico">📦</span>'+esc(tmpDisplayLabel(roomId, tc.row))+'</span>'
       + '<button class="bcf-tmp-chip-remove" onclick="event.stopPropagation();removeTmpCell(\''+roomId+'\','+tc.row+')" title="ลบช่องนี้">✕</button>'
@@ -3522,8 +3524,8 @@ function updateModalTitleLive(){
 }
 // Handler bound to TMP label input's oninput
 function onTmpLabelInput(el){
-  // Strip control chars + cap at 15 chars
-  var v = String(el.value||'').replace(/[\u0000-\u001f]/g,'').slice(0,15);
+  // Strip control chars + HTML/CSV-breaking chars + cap at 15 chars
+  var v = String(el.value||'').replace(/[\u0000-\u001f"<>]/g,'').slice(0,15);
   if(v !== el.value) el.value = v;
   modalLabel = v;
   updateModalTitleLive();
@@ -3855,7 +3857,7 @@ function saveCell(){
   
   const k=ck(editCell.room,editCell.col,editCell.row);
   const _isTmpSave = editCell.col === TMP_COL;
-  const _trimmedLabel = _isTmpSave ? String(modalLabel||'').trim().slice(0,15) : '';
+  const _trimmedLabel = _isTmpSave ? String(modalLabel||'').replace(/[\u0000-\u001f"<>]/g,'').trim().slice(0,15) : '';
   var _cellRecord = {items:valid,note:modalNote.trim(),_mt:Date.now()};
   if(_isTmpSave && _trimmedLabel) _cellRecord.label = _trimmedLabel;
   data[k] = _cellRecord; // _mt = modified time (ms)
@@ -5125,7 +5127,7 @@ function refreshTxInCells(){
     tmpCells.forEach(function(tc){
       var d = data[tc.key];
       var hasData = d && d.items && d.items.length > 0;
-      var label = '📦 '+tmpDisplayLabel(roomKey,tc.row) + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+      var label = '📦 '+esc(tmpDisplayLabel(roomKey,tc.row)) + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
       opts.push('<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>');
     });
   }
@@ -5473,7 +5475,7 @@ function refreshTxOutItems(){
   if(!sel) return;
   var items=getRoomItems(roomKey);
   sel.innerHTML='<option value="">-- เลือกสินค้า --</option>'+
-    items.map(function(it,i){ var _loc = it.col===TMP_COL?('📦'+tmpDisplayLabel(it.room||roomKey,it.row)):(it.col+it.row); return '<option value="'+i+'">'+it.name+' ('+_loc+') '+(it.qtyStr?'| '+it.qtyStr:'')+'</option>'; }).join('');
+    items.map(function(it,i){ var _loc = it.col===TMP_COL?('📦'+esc(tmpDisplayLabel(it.room||roomKey,it.row))):(it.col+it.row); return '<option value="'+i+'">'+it.name+' ('+_loc+') '+(it.qtyStr?'| '+it.qtyStr:'')+'</option>'; }).join('');
   sel._items=items;
   updateTxOutBalance();
 }
@@ -5954,7 +5956,7 @@ function getCellOptions(roomKey, includeEmpty){
     var d = data[tc.key];
     var hasData = d && d.items && d.items.length > 0;
     if(!includeEmpty && !hasData) return;
-    var label = '📦 '+tmpDisplayLabel(roomKey,tc.row) + (hasData ? ' ('+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+    var label = '📦 '+esc(tmpDisplayLabel(roomKey,tc.row)) + (hasData ? ' ('+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
     tmpOpts += '<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>';
   });
   if(tmpOpts){
@@ -6072,7 +6074,7 @@ function refreshSwapCells(side){
     tmpCells.forEach(function(tc){
       var d = data[tc.key];
       var hasData = d && d.items && d.items.length > 0;
-      var label = '📦 '+tmpDisplayLabel(roomKey,tc.row) + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
+      var label = '📦 '+esc(tmpDisplayLabel(roomKey,tc.row)) + (hasData ? ' (มีของ: '+d.items.map(function(i){return i.name;}).join(', ')+')' : ' (ว่าง)');
       opts += '<option value="'+TMP_COL+'|'+tc.row+'">'+label+'</option>';
     });
   }
@@ -6915,8 +6917,8 @@ function jumpToCell(room, col, row){
     // Ensure activeRoom is still set after render
     activeRoom = room;
     var k = ck(room, col, row);
-    // Highlight the cell BEFORE opening modal
-    var cellEl = document.querySelector('.cell[data-key="'+k+'"]');
+    // Highlight the cell BEFORE opening modal (works for both grid cells and TMP chips)
+    var cellEl = document.querySelector('.cell[data-key="'+k+'"], .bcf-tmp-chip[data-key="'+k+'"]');
     if(cellEl){
       cellEl.classList.add('highlighted');
       cellEl.scrollIntoView({behavior:'smooth', block:'center'});
@@ -10480,8 +10482,9 @@ function updateQuickSearchResults(){
     if(v && v.items){
       v.items.forEach(function(it){
         if((it.name||'').toLowerCase().includes(q)){
-          var parts = k.split('|');
-          results.push({type:'stock', icon:'❄️', title:it.name, sub:(ROOMS[parts[0]]?ROOMS[parts[0]].name:parts[0])+' ช่อง '+parts[1]+parts[2]+(it.lot?' LOT '+formatLotDisplay(it.lot):''), key:k});
+          var parts = k.split('||');
+          var _qsCell = parts[1] === TMP_COL ? ('📦'+tmpDisplayLabel(parts[0], parts[2])) : (parts[1]+parts[2]);
+          results.push({type:'stock', icon:'❄️', title:it.name, sub:(ROOMS[parts[0]]?ROOMS[parts[0]].name:parts[0])+' ช่อง '+_qsCell+(it.lot?' LOT '+formatLotDisplay(it.lot):''), key:k});
         }
       });
     }
@@ -11001,7 +11004,8 @@ async function pushToSheets(){
       deletedInvoices: deletedInvoices,
       deletedCustomers: deletedCustomers,
       deletedProducts: deletedProducts,
-      deletedCells: deletedCells
+      deletedCells: deletedCells,
+      tmpCounts: tmpCellCounts
     });
 
     var usingPatch = false;
@@ -11020,7 +11024,8 @@ async function pushToSheets(){
         deletedCells: deletedCells,
         deletedInvoices: deletedInvoices,
         deletedCustomers: deletedCustomers,
-        deletedProducts: deletedProducts
+        deletedProducts: deletedProducts,
+        tmpCounts: tmpCellCounts
       };
       var patchStr = JSON.stringify(patchPayload);
       if(patchStr.length < payload.length){
@@ -11570,6 +11575,16 @@ async function pullFromSheets(){
         Object.keys(data).forEach(function(k){ markDirty(k); });
       }
     } catch(e){ console.error('post-pull migration error:', e); }
+    // Merge cloud TMP counts (take max per room — never shrink local)
+    try{
+      if(parsed.tmpCounts && typeof parsed.tmpCounts === 'object'){
+        Object.keys(tmpCellCounts).forEach(function(rk){
+          var cloudN = parseInt(parsed.tmpCounts[rk]);
+          if(!isNaN(cloudN) && cloudN > (tmpCellCounts[rk]||0)) tmpCellCounts[rk] = cloudN;
+        });
+        _saveTmpCounts();
+      }
+    }catch(e){}
     // Reconcile TMP cell counts with merged cloud data
     try{ reconcileTmpCounts(); }catch(e){}
     hasReceivedCloudData = true;

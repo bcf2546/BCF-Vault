@@ -1,7 +1,7 @@
 {
-  "edition": "2026.12",
-  "version": "18.24",
-  "build": "20260526-1700",
-  "buildTime": "2026-05-26T17:00:00+07:00",
-  "notes": "ตั้งชื่อช่องชั่วคราวได้ (≤15 อักษร) แสดงเป็น 'TMP1 - ชื่อ' ทุกที่ · แก้บั๊กเลขแถวในตารางผัง (เพิ่ม CSS .cell-count badge) · ปรับปรุง history log ให้แสดงชื่อ TMP · Sync ระหว่างเครื่องผ่าน label field ใน data record"
+  "edition": "2026.14",
+  "version": "18.26",
+  "build": "20260610-2230",
+  "buildTime": "2026-06-10T22:30:00+07:00",
+  "notes": "Sync ครบทุกอย่าง: เพิ่ม tmpCounts (จำนวนช่อง TMP) เข้า push/pull — เครื่องใหม่เห็นช่องชั่วคราวครบทันทีแม้ยังไม่มีของ · คู่กับ Apps Script v8 ที่จัดข้อมูลเป็น tab อ่านง่าย (Cells/History/Transactions/Customers/Products/Invoices/Settings/Tombstones) เก็บประวัติสะสมไม่จำกัด"
 }
