@@ -1,7 +1,7 @@
 {
-  "edition": "2026.14",
-  "version": "18.26",
-  "build": "20260610-2230",
-  "buildTime": "2026-06-10T22:30:00+07:00",
-  "notes": "Sync ครบทุกอย่าง: เพิ่ม tmpCounts (จำนวนช่อง TMP) เข้า push/pull — เครื่องใหม่เห็นช่องชั่วคราวครบทันทีแม้ยังไม่มีของ · คู่กับ Apps Script v8 ที่จัดข้อมูลเป็น tab อ่านง่าย (Cells/History/Transactions/Customers/Products/Invoices/Settings/Tombstones) เก็บประวัติสะสมไม่จำกัด"
+  "edition": "2026.15",
+  "version": "18.27",
+  "build": "20260619-1200",
+  "buildTime": "2026-06-19T12:00:00+07:00",
+  "notes": "แก้บั๊กร้ายแรง: ย้าย/สลับช่อง แล้วช่องปลายทางข้อมูลหาย — สาเหตุคือตอน pull จาก cloud ไม่เคารพ tombstone (ช่องที่ลบ/ย้ายออกไปแล้วฟื้นคืนชีพจาก cloud เก่า แล้วทับช่องปลายทาง) ตอนนี้ merge เช็ค deletedCells + เทียบเวลาก่อน · submitMove ส่ง dirty keys ชัดเจน"
 }

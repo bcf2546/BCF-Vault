@@ -3,7 +3,7 @@
 // Provides offline support and faster loading after first visit
 // ════════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'bcf-vault-v18.26';
+const CACHE_NAME = 'bcf-vault-v18.27';
 const CORE_ASSETS = [
   './',
   './index.html',

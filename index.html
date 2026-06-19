@@ -2065,7 +2065,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.14</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.15</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -2161,10 +2161,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.26";
-const BCF_BUILD = "20260610-2230";
+const BCF_VERSION = "18.27";
+const BCF_BUILD = "20260619-1200";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.14";
+const BCF_EDITION = "2026.15";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -6273,7 +6273,7 @@ function submitMove(){
     remaining:'', ts:new Date().toISOString()
   });
 
-  save(); saveTx();
+  save([fromKey, toKey]); saveTx();
   alert('ย้ายของเรียบร้อย: ' + itemName + ' จาก '+cellFullLabel(fromRoom,fromCol,fromRow)+' ไป '+cellFullLabel(toRoom,toCol,toRow));
   renderMove();
 }
@@ -11354,6 +11354,21 @@ async function pullFromSheets(){
         Object.keys(allKeys).forEach(function(k){
           var l = data ? data[k] : null;
           var c = cloudData[k];
+          // ── TOMBSTONE CHECK ── ถ้า cell นี้ถูกลบในเครื่องนี้ (และ tombstone ใหม่กว่า cloud _mt)
+          // ห้ามให้ cloud ฟื้นคืนชีพ — นี่คือสาเหตุที่ swap/move/เบิก ทำช่องปลายทางหาย
+          if(deletedCells && deletedCells[k]){
+            var tombTs = deletedCells[k];
+            var cloudMt = (c && typeof c._mt === 'number') ? c._mt : 0;
+            // tombstone ชนะถ้าใหม่กว่า cloud — ของถูกลบไปแล้วจริง
+            if(tombTs >= cloudMt){
+              if(l){ merged[k] = l; } // local เขียนทับ tombstone แล้ว (เช่น swap เขียนของใหม่ลงช่องที่เคยลบ)
+              // ถ้า local ไม่มีและ tombstone ชนะ → ไม่ใส่ลง merged (คงสภาพถูกลบ)
+              return;
+            }
+            // cloud ใหม่กว่า tombstone → เครื่องอื่นเขียนทับหลังเราลบ → เคลียร์ tombstone เก่าทิ้ง
+            delete deletedCells[k];
+            try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+          }
           if(l && !c){
             merged[k] = l; stats.localOnly++;
             return;
