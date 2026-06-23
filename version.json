@@ -1,7 +1,7 @@
 {
-  "edition": "2026.15",
-  "version": "18.27",
-  "build": "20260619-1200",
-  "buildTime": "2026-06-19T12:00:00+07:00",
-  "notes": "แก้บั๊กร้ายแรง: ย้าย/สลับช่อง แล้วช่องปลายทางข้อมูลหาย — สาเหตุคือตอน pull จาก cloud ไม่เคารพ tombstone (ช่องที่ลบ/ย้ายออกไปแล้วฟื้นคืนชีพจาก cloud เก่า แล้วทับช่องปลายทาง) ตอนนี้ merge เช็ค deletedCells + เทียบเวลาก่อน · submitMove ส่ง dirty keys ชัดเจน"
+  "edition": "2026.17",
+  "version": "18.29",
+  "build": "20260623-1700",
+  "buildTime": "2026-06-23T17:00:00+07:00",
+  "notes": "Audit ใหญ่ + แก้ความเสี่ยงที่เหลือ: (1) tombstone-apply 2 จุดใช้เกณฑ์ >= ให้ตรงกับ merge — ของที่ใส่ตอนเวลาเท่ากับ tombstone ไม่หาย (2) Apps Script patch เปลี่ยนเป็น atomic read-modify-write แทน deleteRow ทีละแถว — เร็วและปลอดภัยขึ้น ไม่มี range เลื่อนกลางคัน (3) เพิ่ม reconcileTombstones/clearAllCellTombstones ใน Apps Script (4) _mt เก็บเป็น text กัน scientific notation ทดสอบ 37 เคสผ่านหมด"
 }

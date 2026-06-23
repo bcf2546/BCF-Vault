@@ -2065,7 +2065,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.15</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.17</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -2161,10 +2161,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.27";
-const BCF_BUILD = "20260619-1200";
+const BCF_VERSION = "18.29";
+const BCF_BUILD = "20260623-1700";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.15";
+const BCF_EDITION = "2026.17";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -11455,9 +11455,21 @@ async function pullFromSheets(){
           dataPendingSync = true;
           Object.keys(data).forEach(function(k){ markDirty(k); });
         }
-        // Apply local cell tombstones immediately so deleted cells don't resurrect
+        // Apply local cell tombstones — แต่เฉพาะถ้า data ไม่ได้ใหม่กว่าหรือเท่ากับ tombstone
+        // (ถ้าผู้ใช้เพิ่งใส่ของใหม่ในช่องที่เคยลบ data._mt จะ >= tombstone → ห้ามลบ)
+        // ใช้เกณฑ์ >= ให้ตรงกับ merge cell-by-cell ด้านบน (data ชนะเมื่อเวลาเท่ากัน)
         Object.keys(deletedCells).forEach(function(cellKey){
-          if(data[cellKey]) delete data[cellKey];
+          if(data[cellKey]){
+            var dmt = (typeof data[cellKey]._mt === 'number') ? data[cellKey]._mt : 0;
+            var tmt = deletedCells[cellKey] || 0;
+            if(dmt >= tmt && dmt > 0){
+              // data ใหม่กว่า/เท่ากับ tombstone → ผู้ใช้เขียนทับแล้ว → ลบ tombstone ทิ้ง
+              delete deletedCells[cellKey];
+              try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(e){}
+            } else {
+              delete data[cellKey];
+            }
+          }
         });
         try{localStorage.setItem('crm_v6',JSON.stringify(data));}catch(ex){}
       }
@@ -11542,12 +11554,25 @@ async function pullFromSheets(){
       });
       try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(ex){}
     }
-    // Apply cell tombstones: remove any cells whose key is marked deleted
-    // (unless our local data has a newer write — compare timestamps via data-modified tracking)
+    // Apply cell tombstones: remove cells marked deleted — BUT only if local data
+    // isn't newer than or equal to the tombstone (user may have just written to it)
+    // ใช้เกณฑ์ >= ให้ตรงกับ merge cell-by-cell (data ชนะเมื่อเวลาเท่ากัน)
     if(Object.keys(deletedCells).length){
+      var tombChanged = false;
       Object.keys(deletedCells).forEach(function(cellKey){
-        if(data[cellKey]) delete data[cellKey];
+        if(data[cellKey]){
+          var dmt = (typeof data[cellKey]._mt === 'number') ? data[cellKey]._mt : 0;
+          var tmt = deletedCells[cellKey] || 0;
+          if(dmt >= tmt && dmt > 0){
+            // ผู้ใช้เขียนทับช่องนี้หลัง/พร้อม tombstone → เก็บ data, ลบ tombstone เก่าทิ้ง
+            delete deletedCells[cellKey];
+            tombChanged = true;
+          } else {
+            delete data[cellKey];
+          }
+        }
       });
+      if(tombChanged){ try{ localStorage.setItem('bcf_deleted_cells', JSON.stringify(deletedCells)); }catch(ex){} }
       try{ localStorage.setItem('crm_v6', JSON.stringify(data)); }catch(ex){}
     }
     // Apply tombstones: remove any records from lists that are now marked deleted
