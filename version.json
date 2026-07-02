@@ -1,7 +1,7 @@
 {
-  "edition": "2026.17",
-  "version": "18.29",
-  "build": "20260623-1700",
-  "buildTime": "2026-06-23T17:00:00+07:00",
-  "notes": "Audit ใหญ่ + แก้ความเสี่ยงที่เหลือ: (1) tombstone-apply 2 จุดใช้เกณฑ์ >= ให้ตรงกับ merge — ของที่ใส่ตอนเวลาเท่ากับ tombstone ไม่หาย (2) Apps Script patch เปลี่ยนเป็น atomic read-modify-write แทน deleteRow ทีละแถว — เร็วและปลอดภัยขึ้น ไม่มี range เลื่อนกลางคัน (3) เพิ่ม reconcileTombstones/clearAllCellTombstones ใน Apps Script (4) _mt เก็บเป็น text กัน scientific notation ทดสอบ 37 เคสผ่านหมด"
+  "edition": "2026.18",
+  "version": "18.30",
+  "build": "20260702-1200",
+  "buildTime": "2026-07-02T12:00:00+07:00",
+  "notes": "Telegram แจ้งเตือน: เบิก/รับ/ย้าย/สลับ เข้ากลุ่มทันทีทุกรายการ (แทนอีเมล — อีเมลปิดไว้ เปิดกลับได้ด้วย enableEmail ใน Apps Script) · สรุปประจำวันเข้ากลุ่ม 2 รอบ ~12:30 ครึ่งเช้า และ ~18:00 ทั้งวัน พร้อมยอดคงเหลือหลังเบิก/หมดช่อง และยอดรวม · รวม fix ข้อมูลหาย v18.29 ครบ"
 }

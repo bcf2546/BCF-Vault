@@ -2065,7 +2065,7 @@ button,.btn,.view-btn,.room-btn,a,
       <img id="bcfHeaderLogo" src="" alt="Black Chicken Farm">
     </div>
     <div style="display:flex;flex-direction:column;justify-content:center">
-      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.17</span></div>
+      <div class="bcf-brand-title"><span class="ico">❄️</span>Black Chicken Farm<span id="bcfVersionLabel" class="bcf-version-pill" title="คลิกเพื่อตรวจสอบเวอร์ชันใหม่">Edition 2026.18</span></div>
       <div class="bcf-brand-subtitle">ผังห้องเย็น · ฟาร์มไก่ดำ (กาญจนบุรี)</div>
       <div class="bcf-brand-address">300/13 ถ.แสงชูโตเหนือ ต.ท่ามะขาม อ.เมือง จ.กาญจนบุรี 71000</div>
     </div>
@@ -2161,10 +2161,10 @@ button,.btn,.view-btn,.room-btn,a,
 
 // ── Version (auto-update) ──
 // Internal version for comparison logic (don't change format)
-const BCF_VERSION = "18.29";
-const BCF_BUILD = "20260623-1700";
+const BCF_VERSION = "18.30";
+const BCF_BUILD = "20260702-1200";
 // Display version — Edition YYYY.N (year.release-number-of-the-year)
-const BCF_EDITION = "2026.17";
+const BCF_EDITION = "2026.18";
 window.BCF_VERSION = BCF_VERSION;
 window.BCF_BUILD = BCF_BUILD;
 window.BCF_EDITION = BCF_EDITION;
@@ -6163,11 +6163,23 @@ function submitSwap(){
     lot:'', cellPos:cellShortLabel(fromCol,fromRow),
     qty:'', unit:'',
     customer:ROOMS[toRoom]?.name+' ช่อง '+cellFullLabel(toRoom,toCol,toRow),
-    by:by, date:date, note:'',
+    by:by, date:date, note:(fromDesc+' ↔ '+toDesc).slice(0,120),
     remaining:'', ts:new Date().toISOString()
   });
 
   save([fromKey, toKey]); saveTx();
+  // แจ้งเข้ากลุ่ม Telegram ทันที (fire and forget)
+  try{
+    notifyMove({
+      kind:'สลับ',
+      fromLabel: cellFullLabel(fromRoom,fromCol,fromRow),
+      toLabel: cellFullLabel(toRoom,toCol,toRow),
+      fromRoomName: ROOMS[fromRoom]?.name||fromRoom,
+      toRoomName: ROOMS[toRoom]?.name||toRoom,
+      fromDesc: fromDesc, toDesc: toDesc,
+      by: by, date: date
+    });
+  }catch(e){}
   alert('สลับช่องเรียบร้อยแล้ว! '+cellFullLabel(fromRoom,fromCol,fromRow)+' ⇄ '+cellFullLabel(toRoom,toCol,toRow));
   renderMove();
 }
@@ -6274,6 +6286,19 @@ function submitMove(){
   });
 
   save([fromKey, toKey]); saveTx();
+  // แจ้งเข้ากลุ่ม Telegram ทันที (fire and forget)
+  try{
+    notifyMove({
+      kind:'ย้าย',
+      itemName: itemName,
+      qty: movedSummary.join(' | '),
+      fromLabel: cellFullLabel(fromRoom,fromCol,fromRow),
+      toLabel: cellFullLabel(toRoom,toCol,toRow),
+      fromRoomName: ROOMS[fromRoom]?.name||fromRoom,
+      toRoomName: ROOMS[toRoom]?.name||toRoom,
+      by: by, date: date, note: note
+    });
+  }catch(e){}
   alert('ย้ายของเรียบร้อย: ' + itemName + ' จาก '+cellFullLabel(fromRoom,fromCol,fromRow)+' ไป '+cellFullLabel(toRoom,toCol,toRow));
   renderMove();
 }
@@ -7934,6 +7959,14 @@ async function notifyReceive(tx){
     });
     await fetch(GS_URL, {method:'POST',headers:{'Content-Type':'text/plain'},body:payload});
   } catch(e){ console.warn('Receive notify failed:', e.message); }
+}
+
+// แจ้งเตือนย้าย/สลับช่องเข้ากลุ่ม (Apps Script จะส่งต่อไป Telegram)
+async function notifyMove(info){
+  try{
+    var payload = JSON.stringify(Object.assign({ type: 'move_notify' }, info));
+    await fetch(GS_URL, {method:'POST',headers:{'Content-Type':'text/plain'},body:payload});
+  } catch(e){ console.warn('Move notify failed:', e.message); }
 }
 
 // ══════════════════════════════════════════
